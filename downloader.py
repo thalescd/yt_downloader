@@ -9,8 +9,7 @@ from typing import Callable, Optional
 from pytubefix import Playlist, YouTube
 from pytubefix.exceptions import RegexMatchError
 
-_RESOLUTION_FALLBACK = ["720p", "480p", "360p"]
-_ADAPTIVE_BEST = ["1080p", "720p", "480p", "360p"]
+_RESOLUTION_FALLBACK = ["1080p", "720p", "480p", "360p"]
 
 
 def download(
@@ -55,7 +54,7 @@ def download_playlist(
     return downloaded, failed
 
 
-def _has_ffmpeg() -> bool:
+def has_ffmpeg() -> bool:
     return shutil.which("ffmpeg") is not None
 
 
@@ -72,7 +71,7 @@ def _get_progressive_stream(yt: YouTube, resolution: str):
 
 def _get_adaptive_video_stream(yt: YouTube, resolution: str):
     if resolution == "best":
-        for res in _ADAPTIVE_BEST:
+        for res in _RESOLUTION_FALLBACK:
             stream = yt.streams.filter(adaptive=True, only_video=True, res=res).first()
             if stream:
                 return stream
@@ -129,7 +128,7 @@ def _download_video(
             raise RuntimeError("Nenhum stream de áudio disponível para este vídeo.")
         return _safe_download(stream, output_path), "áudio"
 
-    if _has_ffmpeg():
+    if has_ffmpeg():
         vid = _get_adaptive_video_stream(yt, resolution)
         aud = yt.streams.filter(only_audio=True).order_by("abr").last()
         if vid and aud:
@@ -153,6 +152,6 @@ def _download_video(
     # Fallback: progressive only
     stream = _get_progressive_stream(yt, resolution)
     if not stream:
-        hint = "" if _has_ffmpeg() else " Instale o ffmpeg para mais opções de qualidade."
+        hint = "" if has_ffmpeg() else " Instale o ffmpeg para mais opções de qualidade."
         raise RuntimeError(f"Nenhum stream de vídeo disponível para este vídeo.{hint}")
     return _safe_download(stream, output_path), stream.resolution or "desconhecida"

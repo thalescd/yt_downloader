@@ -12,7 +12,7 @@ import sv_ttk
 
 import config
 import history
-from downloader import download, download_playlist
+from downloader import download, download_playlist, has_ffmpeg
 
 
 class App(tk.Tk):
@@ -22,6 +22,7 @@ class App(tk.Tk):
         self.resizable(False, False)
         self._queue = queue.Queue()
         self._config = config.load()
+        self._ffmpeg = has_ffmpeg()
         sv_ttk.set_theme(self._config.theme)
         self._build_ui()
 
@@ -60,38 +61,53 @@ class App(tk.Tk):
         self._url_var.trace_add("write", self._on_url_change)
         self._type_var.trace_add("write", self._on_type_change)
 
-        ttk.Label(frame, text="Qualidade:").grid(row=4, column=0, sticky="w")
+        self._quality_label = ttk.Label(frame, text="Qualidade:")
+        self._quality_label.grid(row=4, column=0, sticky="w")
         self._quality_var = tk.StringVar(value="Melhor disponível")
+        quality_values = (
+            ["Melhor disponível", "1080p", "720p", "480p", "360p"]
+            if self._ffmpeg
+            else ["Melhor disponível", "360p"]
+        )
         self._quality_combo = ttk.Combobox(
             frame,
             textvariable=self._quality_var,
-            values=["Melhor disponível", "720p", "480p", "360p"],
+            values=quality_values,
             state="readonly",
             width=20,
         )
-        self._quality_combo.grid(row=5, column=0, columnspan=2, sticky="w", pady=(2, 12))
+        self._quality_combo.grid(row=5, column=0, columnspan=2, sticky="w", pady=(2, 4))
+        if not self._ffmpeg:
+            self._ffmpeg_label: Optional[ttk.Label] = ttk.Label(
+                frame,
+                text="ffmpeg não encontrado — instale para mais opções de qualidade",
+                foreground="gray",
+            )
+            self._ffmpeg_label.grid(row=6, column=0, columnspan=2, sticky="w", pady=(0, 10))
+        else:
+            self._ffmpeg_label = None
 
-        ttk.Label(frame, text="Pasta de destino:").grid(row=6, column=0, sticky="w")
+        ttk.Label(frame, text="Pasta de destino:").grid(row=7, column=0, sticky="w")
         self._path_var = tk.StringVar(value=str(Path.home() / "Downloads"))
         ttk.Entry(frame, textvariable=self._path_var, width=42, state="readonly").grid(
-            row=7, column=0, pady=(2, 12), sticky="w"
+            row=8, column=0, pady=(2, 12), sticky="w"
         )
         ttk.Button(frame, text="Selecionar...", command=self._select_folder).grid(
-            row=7, column=1, padx=(6, 0), pady=(2, 12)
+            row=8, column=1, padx=(6, 0), pady=(2, 12)
         )
 
         self._progress_var = tk.DoubleVar()
         ttk.Progressbar(frame, variable=self._progress_var, maximum=100, length=430).grid(
-            row=8, column=0, columnspan=2, pady=(0, 6)
+            row=9, column=0, columnspan=2, pady=(0, 6)
         )
 
         self._status_var = tk.StringVar(value="Pronto.")
-        ttk.Label(frame, textvariable=self._status_var).grid(row=9, column=0, columnspan=2)
+        ttk.Label(frame, textvariable=self._status_var).grid(row=10, column=0, columnspan=2)
 
         self._btn = ttk.Button(frame, text="Baixar", command=self._start_download)
-        self._btn.grid(row=10, column=0, pady=(16, 0), ipadx=16, ipady=4, sticky="ew")
+        self._btn.grid(row=11, column=0, pady=(16, 0), ipadx=16, ipady=4, sticky="ew")
         ttk.Button(frame, text="Histórico", command=self._open_history).grid(
-            row=10, column=1, pady=(16, 0), padx=(6, 0), ipady=4, sticky="ew"
+            row=11, column=1, pady=(16, 0), padx=(6, 0), ipady=4, sticky="ew"
         )
 
     def _open_history(self) -> None:
@@ -138,7 +154,16 @@ class App(tk.Tk):
 
     def _update_quality_state(self) -> None:
         is_audio = self._type_var.get() == "audio"
-        self._quality_combo.config(state="disabled" if is_audio else "readonly")
+        if is_audio:
+            self._quality_label.grid_remove()
+            self._quality_combo.grid_remove()
+            if self._ffmpeg_label:
+                self._ffmpeg_label.grid_remove()
+        else:
+            self._quality_label.grid()
+            self._quality_combo.grid()
+            if self._ffmpeg_label:
+                self._ffmpeg_label.grid()
 
     def _on_type_change(self, _name: str, _index: str, _mode: str) -> None:
         self._update_quality_state()
