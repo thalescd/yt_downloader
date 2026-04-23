@@ -11,30 +11,30 @@ _VALID_THEMES = {"dark", "light"}
 
 @dataclass
 class Config:
-    tema: str = "dark"
-    max_entradas: int = 100
+    theme: str = "dark"
+    max_entries: int = 100
 
 
-def carregar() -> Config:
+def load() -> Config:
     cfg = Config()
     if not _CONFIG_FILE.exists():
         return cfg
     parser = configparser.ConfigParser()
     try:
         parser.read(_CONFIG_FILE, encoding="utf-8")
-        tema = parser.get("app", "tema", fallback="dark")
-        cfg.tema = tema if tema in _VALID_THEMES else "dark"
-        max_e = parser.getint("historico", "max_entradas", fallback=100)
-        cfg.max_entradas = max_e if max_e > 0 else 100
+        theme = parser.get("app", "theme", fallback="dark")
+        cfg.theme = theme if theme in _VALID_THEMES else "dark"
+        max_e = parser.getint("history", "max_entries", fallback=100)
+        cfg.max_entries = max_e if max_e > 0 else 100
     except Exception:
         pass
     return cfg
 
 
-def salvar(cfg: Config) -> None:
+def save(cfg: Config) -> None:
     _CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     parser = configparser.ConfigParser()
-    parser["app"] = {"tema": cfg.tema}
-    parser["historico"] = {"max_entradas": str(cfg.max_entradas)}
+    parser["app"] = {"theme": cfg.theme}
+    parser["history"] = {"max_entries": str(cfg.max_entries)}
     with _CONFIG_FILE.open("w", encoding="utf-8") as f:
         parser.write(f)

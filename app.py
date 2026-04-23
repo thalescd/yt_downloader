@@ -10,9 +10,9 @@ from typing import Optional
 
 import sv_ttk
 
-import config as cfg_module
-import historico
-from baixador import download, download_playlist
+import config
+import history
+from downloader import download, download_playlist
 
 
 class App(tk.Tk):
@@ -21,8 +21,8 @@ class App(tk.Tk):
         self.title("YT Downloader")
         self.resizable(False, False)
         self._queue = queue.Queue()
-        self._cfg = cfg_module.carregar()
-        sv_ttk.set_theme(self._cfg.tema)
+        self._config = config.load()
+        sv_ttk.set_theme(self._config.theme)
         self._build_ui()
 
     def _build_ui(self):
@@ -32,12 +32,12 @@ class App(tk.Tk):
         ttk.Label(frame, text="YT Downloader", font=("", 14, "bold")).grid(
             row=0, column=0, sticky="w", pady=(0, 16)
         )
-        self._dark_var = tk.BooleanVar(value=self._cfg.tema == "dark")
+        self._dark_var = tk.BooleanVar(value=self._config.theme == "dark")
         ttk.Checkbutton(
             frame,
             text="Modo escuro",
             variable=self._dark_var,
-            command=self._on_toggle_tema,
+            command=self._on_toggle_theme,
         ).grid(row=0, column=1, sticky="e", pady=(0, 16))
 
         ttk.Label(frame, text="URL do vídeo:").grid(row=1, column=0, sticky="w")
@@ -90,19 +90,19 @@ class App(tk.Tk):
 
         self._btn = ttk.Button(frame, text="Baixar", command=self._start_download)
         self._btn.grid(row=10, column=0, pady=(16, 0), ipadx=16, ipady=4, sticky="ew")
-        ttk.Button(frame, text="Histórico", command=self._abrir_historico).grid(
+        ttk.Button(frame, text="Histórico", command=self._open_history).grid(
             row=10, column=1, pady=(16, 0), padx=(6, 0), ipady=4, sticky="ew"
         )
 
-    def _abrir_historico(self) -> None:
-        HistoricoWindow(self)
+    def _open_history(self) -> None:
+        HistoryWindow(self)
 
-    def _on_toggle_tema(self) -> None:
+    def _on_toggle_theme(self) -> None:
         theme = "dark" if self._dark_var.get() else "light"
         sv_ttk.set_theme(theme)
-        self._cfg.tema = theme
+        self._config.theme = theme
         try:
-            cfg_module.salvar(self._cfg)
+            config.save(self._config)
         except Exception as exc:
             messagebox.showwarning(
                 "Aviso", f"Não foi possível salvar a preferência de tema:\n{exc}"
@@ -239,16 +239,16 @@ class App(tk.Tk):
                     self._status_var.set("Concluído.")
                     self._btn.config(state="normal")
                     try:
-                        tipo = "áudio" if self._current_audio_only else "vídeo"
-                        historico.salvar(
-                            historico.nova_entrada(
+                        media_type = "áudio" if self._current_audio_only else "vídeo"
+                        history.save(
+                            history.new_entry(
                                 self._current_url,
                                 Path(filepath).stem,
-                                tipo,
+                                media_type,
                                 actual_res,
                                 filepath,
                             ),
-                            self._cfg.max_entradas,
+                            self._config.max_entries,
                         )
                     except Exception:
                         pass
@@ -259,19 +259,19 @@ class App(tk.Tk):
                     self._progress_var.set(100)
                     self._btn.config(state="normal")
                     try:
-                        tipo = "áudio" if self._current_audio_only else "vídeo"
-                        entradas = [
-                            historico.nova_entrada(
+                        media_type = "áudio" if self._current_audio_only else "vídeo"
+                        entries = [
+                            history.new_entry(
                                 self._current_url,
                                 Path(fp).stem,
-                                tipo,
+                                media_type,
                                 actual_res,
                                 fp,
                             )
                             for fp, actual_res in downloaded
                         ]
-                        if entradas:
-                            historico.salvar_varias(entradas, self._cfg.max_entradas)
+                        if entries:
+                            history.save_many(entries, self._config.max_entries)
                     except Exception:
                         pass
                     if failed:
@@ -300,15 +300,15 @@ class App(tk.Tk):
         self.after(100, self._poll_queue)
 
 
-class HistoricoWindow(tk.Toplevel):
+class HistoryWindow(tk.Toplevel):
     def __init__(self, parent: App):
         super().__init__(parent)
         self.title("Histórico de Downloads")
         self.resizable(True, True)
         self.geometry("900x400")
-        self._entradas: list[dict] = []
+        self._entries: list[dict] = []
         self._build_ui()
-        self._carregar()
+        self._load()
 
     def _build_ui(self) -> None:
         self.grid_rowconfigure(0, weight=1)
@@ -318,51 +318,51 @@ class HistoricoWindow(tk.Toplevel):
         frame.grid_rowconfigure(0, weight=1)
         frame.grid_columnconfigure(0, weight=1)
 
-        cols = ("data", "titulo", "tipo", "qualidade", "caminho")
+        cols = ("date", "title", "type", "resolution", "folder")
         self._tree = ttk.Treeview(frame, columns=cols, show="headings", height=15)
-        self._tree.heading("data", text="Data")
-        self._tree.heading("titulo", text="Título")
-        self._tree.heading("tipo", text="Tipo")
-        self._tree.heading("qualidade", text="Qualidade")
-        self._tree.heading("caminho", text="Pasta")
-        self._tree.column("data", width=140, stretch=False)
-        self._tree.column("titulo", width=260)
-        self._tree.column("tipo", width=55, stretch=False)
-        self._tree.column("qualidade", width=90, stretch=False)
-        self._tree.column("caminho", width=260)
+        self._tree.heading("date", text="Data")
+        self._tree.heading("title", text="Título")
+        self._tree.heading("type", text="Tipo")
+        self._tree.heading("resolution", text="Qualidade")
+        self._tree.heading("folder", text="Pasta")
+        self._tree.column("date", width=140, stretch=False)
+        self._tree.column("title", width=260)
+        self._tree.column("type", width=55, stretch=False)
+        self._tree.column("resolution", width=90, stretch=False)
+        self._tree.column("folder", width=260)
         self._tree.grid(row=0, column=0, sticky="nsew")
 
         scroll = ttk.Scrollbar(frame, orient="vertical", command=self._tree.yview)
         scroll.grid(row=0, column=1, sticky="ns")
         self._tree.configure(yscrollcommand=scroll.set)
-        self._tree.bind("<Double-1>", lambda _: self._copiar_url())
+        self._tree.bind("<Double-1>", lambda _: self._copy_url())
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=1, column=0, columnspan=2, pady=(8, 0), sticky="ew")
-        ttk.Button(btn_frame, text="Copiar URL", command=self._copiar_url).pack(
+        ttk.Button(btn_frame, text="Copiar URL", command=self._copy_url).pack(
             side="left", padx=(0, 6)
         )
-        ttk.Button(btn_frame, text="Abrir pasta", command=self._abrir_pasta).pack(side="left")
-        ttk.Button(btn_frame, text="Limpar histórico", command=self._limpar).pack(side="right")
+        ttk.Button(btn_frame, text="Abrir pasta", command=self._open_folder).pack(side="left")
+        ttk.Button(btn_frame, text="Limpar histórico", command=self._clear).pack(side="right")
 
-    def _carregar(self) -> None:
-        self._entradas = historico.carregar()
+    def _load(self) -> None:
+        self._entries = history.load()
         self._tree.delete(*self._tree.get_children())
-        for e in self._entradas:
-            pasta = str(Path(e.get("caminho", "")).parent) if e.get("caminho") else ""
+        for e in self._entries:
+            folder = str(Path(e.get("path", "")).parent) if e.get("path") else ""
             self._tree.insert(
                 "",
                 "end",
-                values=(e["data"], e["titulo"], e["tipo"], e.get("resolucao", ""), pasta),
+                values=(e["date"], e["title"], e["type"], e.get("resolution", ""), folder),
             )
 
     def _selected_entry(self) -> Optional[dict]:
         sel = self._tree.selection()
         if not sel:
             return None
-        return self._entradas[self._tree.index(sel[0])]
+        return self._entries[self._tree.index(sel[0])]
 
-    def _copiar_url(self) -> None:
+    def _copy_url(self) -> None:
         entry = self._selected_entry()
         if not entry:
             messagebox.showwarning("Aviso", "Selecione um item primeiro.", parent=self)
@@ -371,22 +371,22 @@ class HistoricoWindow(tk.Toplevel):
         self.clipboard_append(entry["url"])
         self.update()
 
-    def _abrir_pasta(self) -> None:
+    def _open_folder(self) -> None:
         entry = self._selected_entry()
         if not entry:
             messagebox.showwarning("Aviso", "Selecione um item primeiro.", parent=self)
             return
-        pasta = Path(entry["caminho"]).parent
-        if not pasta.exists():
+        folder = Path(entry["path"]).parent
+        if not folder.exists():
             messagebox.showwarning("Aviso", "A pasta não existe mais.", parent=self)
             return
-        os.startfile(pasta)
+        os.startfile(folder)
 
-    def _limpar(self) -> None:
+    def _clear(self) -> None:
         if not messagebox.askyesno("Confirmar", "Limpar todo o histórico?", parent=self):
             return
-        historico.limpar()
-        self._carregar()
+        history.clear()
+        self._load()
 
 
 if __name__ == "__main__":

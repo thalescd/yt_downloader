@@ -24,7 +24,7 @@ def download(
         yt = YouTube(url, on_progress_callback=on_progress)
     except RegexMatchError:
         raise ValueError("URL inválida. Verifique o link e tente novamente.")
-    return _download_yt(yt, audio_only, output_path, resolution)
+    return _download_video(yt, audio_only, output_path, resolution)
 
 
 def download_playlist(
@@ -48,7 +48,7 @@ def download_playlist(
             yt = YouTube(video_url, on_progress_callback=on_progress)
             if on_video_start:
                 on_video_start(index, total, yt.title)
-            downloaded.append(_download_yt(yt, audio_only, output_path, resolution))
+            downloaded.append(_download_video(yt, audio_only, output_path, resolution))
         except Exception as exc:
             failed.append((video_url, str(exc)))
 
@@ -120,7 +120,7 @@ def _safe_download(stream, output_path: str) -> str:
     return result
 
 
-def _download_yt(
+def _download_video(
     yt: YouTube, audio_only: bool, output_path: str, resolution: str = "best"
 ) -> tuple[str, str]:
     if audio_only:
