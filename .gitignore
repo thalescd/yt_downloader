@@ -5,4 +5,3 @@ dist/
 build/
 *.spec
 .env
-prompt inicial.txt
