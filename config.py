@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import configparser
 from dataclasses import dataclass
-from pathlib import Path
 
-_CONFIG_DIR = Path.home() / ".yt_downloader"
-_CONFIG_FILE = _CONFIG_DIR / "config.ini"
+from paths import app_dir
+
+_CONFIG_FILE = app_dir() / "config.ini"
 _VALID_THEMES = {"dark", "light"}
 
 
@@ -32,7 +32,7 @@ def load() -> Config:
 
 
 def save(cfg: Config) -> None:
-    _CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    _CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
     parser = configparser.ConfigParser()
     parser["app"] = {"theme": cfg.theme}
     parser["history"] = {"max_entries": str(cfg.max_entries)}

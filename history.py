@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from pathlib import Path
 
-_HISTORY_FILE = Path.home() / ".yt_downloader" / "history.json"
+from paths import app_dir
+
+_HISTORY_FILE = app_dir() / "history.json"
 
 
 def new_entry(url: str, title: str, media_type: str, resolution: str, path: str) -> dict:
