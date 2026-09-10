@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
+import log
 from paths import app_dir
+
+_log = log.get(__name__)
 
 _HISTORY_FILE = app_dir() / "history.json"
 
@@ -25,6 +28,7 @@ def load() -> list[dict]:
     try:
         return json.loads(_HISTORY_FILE.read_text(encoding="utf-8"))
     except Exception:
+        _log.exception("Histórico ilegível em %s; tratando como vazio", _HISTORY_FILE)
         return []
 
 

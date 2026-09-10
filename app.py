@@ -12,9 +12,12 @@ import sv_ttk
 
 import config
 import history
+import log
 import urls
 from downloader import download, download_playlist, has_ffmpeg
 from version import APP_NAME, __version__
+
+_log = log.get(__name__)
 
 
 class App(tk.Tk):
@@ -122,6 +125,7 @@ class App(tk.Tk):
         try:
             config.save(self._config)
         except Exception as exc:
+            _log.exception("Falha ao salvar a preferência de tema")
             messagebox.showwarning(
                 "Aviso", f"Não foi possível salvar a preferência de tema:\n{exc}"
             )
@@ -215,6 +219,7 @@ class App(tk.Tk):
                 )
                 self._queue.put(("done", result))
         except Exception as exc:
+            _log.exception("Download falhou para %s", url)
             self._queue.put(("error", str(exc)))
 
     def _on_progress(self, stream, chunk, bytes_remaining: int):
@@ -255,7 +260,7 @@ class App(tk.Tk):
                             self._config.max_entries,
                         )
                     except Exception:
-                        pass
+                        _log.exception("Falha ao gravar o histórico do download")
                     messagebox.showinfo("Sucesso", f"Arquivo salvo em:\n{filepath}")
                     return
                 elif kind == "done_playlist":
@@ -277,7 +282,7 @@ class App(tk.Tk):
                         if entries:
                             history.save_many(entries, self._config.max_entries)
                     except Exception:
-                        pass
+                        _log.exception("Falha ao gravar o histórico da playlist")
                     if failed:
                         visible = failed[:5]
                         fail_msgs = "\n".join(f"• {url}: {reason}" for url, reason in visible)
@@ -394,4 +399,5 @@ class HistoryWindow(tk.Toplevel):
 
 
 if __name__ == "__main__":
+    log.setup()
     App().mainloop()

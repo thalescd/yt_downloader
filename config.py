@@ -3,7 +3,10 @@ from __future__ import annotations
 import configparser
 from dataclasses import dataclass
 
+import log
 from paths import app_dir
+
+_log = log.get(__name__)
 
 _CONFIG_FILE = app_dir() / "config.ini"
 _VALID_THEMES = {"dark", "light"}
@@ -27,7 +30,7 @@ def load() -> Config:
         max_e = parser.getint("history", "max_entries", fallback=100)
         cfg.max_entries = max_e if max_e > 0 else 100
     except Exception:
-        pass
+        _log.exception("Falha ao ler %s; usando configuração padrão", _CONFIG_FILE)
     return cfg
 
 
