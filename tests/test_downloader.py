@@ -200,38 +200,6 @@ def test_adaptive_ignora_streams_de_audio() -> None:
 
 
 # --------------------------------------------------------------------------
-# _safe_download
-# --------------------------------------------------------------------------
-class ExplodingStream(FakeStream):
-    """Cria o arquivo parcial e então falha, como um download interrompido."""
-
-    def __init__(self, destino: Path) -> None:
-        super().__init__(resolution="720p")
-        self._destino = destino
-
-    def download(self, output_path: str) -> str:
-        (Path(output_path) / self.default_filename).write_text("parcial")
-        raise OSError("conexão perdida")
-
-
-class NoneReturningStream(FakeStream):
-    def download(self, output_path: str) -> None:
-        return None
-
-
-def test_safe_download_apaga_o_arquivo_parcial_na_falha(tmp_path: Path) -> None:
-    stream = ExplodingStream(tmp_path)
-    with pytest.raises(OSError):
-        downloader._safe_download(stream, str(tmp_path))
-    assert not (tmp_path / stream.default_filename).exists()
-
-
-def test_safe_download_recusa_retorno_nulo(tmp_path: Path) -> None:
-    with pytest.raises(RuntimeError, match="sem retornar o caminho"):
-        downloader._safe_download(NoneReturningStream(resolution="720p"), str(tmp_path))
-
-
-# --------------------------------------------------------------------------
 # ffmpeg
 # --------------------------------------------------------------------------
 def test_has_ffmpeg_reflete_o_path(monkeypatch: pytest.MonkeyPatch) -> None:

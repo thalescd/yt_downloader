@@ -99,6 +99,39 @@ def _unique_path(path: Path) -> Path:
         counter += 1
 
 
+def _target_name(stream) -> str:
+    """Nome final do arquivo: base sanitizada por nós, extensão escolhida pelo
+    pytubefix.
+
+    A extensão vem de `default_filename` de propósito — acessá-lo é o que faz o
+    pytubefix trocar o subtype para m4a em streams de áudio. Já a base passa por
+    `_sanitize`, garantindo o mesmo nome com e sem ffmpeg (o pytubefix apagaria
+    os caracteres inválidos, enquanto nós os substituímos por "_").
+    """
+    raw = stream.default_filename
+    base, _, ext = raw.rpartition(".")
+    if not ext:
+        return _sanitize(raw)
+    return f"{_sanitize(base)}.{ext}"
+
+
+def _download_temp(stream, output_path: str, prefix: str) -> str:
+    """Baixa um stream para arquivo temporário, que o chamador deve remover.
+
+    `skip_existing=False` evita reaproveitar um temporário deixado para trás por
+    um encerramento abrupto.
+    """
+    target = Path(output_path) / f"{prefix}{_target_name(stream)}"
+    try:
+        result = stream.download(output_path=output_path, filename=target.name, skip_existing=False)
+    except Exception:
+        target.unlink(missing_ok=True)
+        raise
+    if result is None:
+        raise RuntimeError("O download falhou sem retornar o caminho do arquivo.")
+    return result
+
+
 def _merge_streams(video_path: str, audio_path: str, output_path: str) -> None:
     subprocess.run(
         ["ffmpeg", "-y", "-i", video_path, "-i", audio_path, "-c", "copy", output_path],
@@ -108,11 +141,20 @@ def _merge_streams(video_path: str, audio_path: str, output_path: str) -> None:
 
 
 def _safe_download(stream, output_path: str) -> str:
-    partial = Path(output_path) / stream.default_filename
+    """Baixa um stream para um nome livre, sem nunca sobrescrever.
+
+    O nome vai explícito no `filename` porque o padrão do pytubefix
+    (`skip_existing=True`) pula o download quando já existe um arquivo de mesmo
+    nome e mesmo tamanho, e trunca o existente quando o tamanho difere — dois
+    vídeos distintos de mesmo título bastam para causar perda. Passando um nome
+    único, nenhum dos dois casos ocorre, e o caminho do parcial que limpamos em
+    caso de falha é de fato o que o pytubefix escreve.
+    """
+    target = _unique_path(Path(output_path) / _target_name(stream))
     try:
-        result = stream.download(output_path=output_path)
+        result = stream.download(output_path=output_path, filename=target.name)
     except Exception:
-        partial.unlink(missing_ok=True)
+        target.unlink(missing_ok=True)
         raise
     if result is None:
         raise RuntimeError("O download falhou sem retornar o caminho do arquivo.")
@@ -133,13 +175,9 @@ def _download_video(
         aud = yt.streams.filter(only_audio=True).order_by("abr").last()
         if vid and aud:
             actual_res = vid.resolution or "desconhecida"
-            tmp_vid = vid.download(output_path=output_path, filename_prefix="_tmpv_")
-            if tmp_vid is None:
-                raise RuntimeError("Download do stream de vídeo falhou.")
+            tmp_vid = _download_temp(vid, output_path, "_tmpv_")
             try:
-                tmp_aud = aud.download(output_path=output_path, filename_prefix="_tmpa_")
-                if tmp_aud is None:
-                    raise RuntimeError("Download do stream de áudio falhou.")
+                tmp_aud = _download_temp(aud, output_path, "_tmpa_")
                 try:
                     out = _unique_path(Path(output_path) / f"{_sanitize(yt.title)}.mp4")
                     _merge_streams(tmp_vid, tmp_aud, str(out))
