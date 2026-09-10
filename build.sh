@@ -27,7 +27,8 @@ echo "Gerando executável..."
     --name "yt-downloader" \
     --collect-all pytubefix \
     --collect-all sv_ttk \
-    app.py
+    --paths . \
+    yt_downloader/__main__.py
 
 echo
 echo "Pronto! Executável gerado em: dist/yt-downloader"

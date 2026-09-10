@@ -4,9 +4,7 @@ from pathlib import Path
 
 import pytest
 
-import config
-import history
-import paths
+from yt_downloader import config, history, paths
 
 
 def test_config_fica_ao_lado_do_executavel() -> None:
@@ -32,6 +30,13 @@ def test_app_dir_acompanha_o_executavel_quando_congelado(
     assert paths.app_dir() == tmp_path / "dist"
 
 
-def test_app_dir_usa_o_fonte_quando_nao_congelado(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_app_dir_usa_a_raiz_do_projeto_quando_nao_congelado(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A raiz, não a pasta do pacote: config.ini e logs/ não podem cair
+    dentro de yt_downloader/, que é código versionado."""
     monkeypatch.delattr(paths.sys, "frozen", raising=False)
-    assert paths.app_dir() == Path(paths.__file__).parent
+    raiz = Path(paths.__file__).resolve().parents[1]
+    assert paths.app_dir() == raiz
+    assert paths.app_dir().name == "yt_downloader"
+    assert not (paths.app_dir() / "__init__.py").exists()

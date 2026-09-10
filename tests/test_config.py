@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-import config
+from yt_downloader import config
 
 
 @pytest.fixture

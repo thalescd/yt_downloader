@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
-import log
-from paths import app_dir
+from yt_downloader import log
+from yt_downloader.paths import app_dir
 
 _log = log.get(__name__)
 

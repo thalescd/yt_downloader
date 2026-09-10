@@ -32,4 +32,4 @@ if errorlevel 1 (
 
 echo.
 echo Setup concluido! Abrindo o app...
-.venv\Scripts\python app.py
+.venv\Scripts\python -m yt_downloader

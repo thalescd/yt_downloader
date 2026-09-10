@@ -4,8 +4,8 @@ import logging
 import sys
 from logging.handlers import RotatingFileHandler
 
-from paths import log_dir
-from version import __version__
+from yt_downloader.paths import log_dir
+from yt_downloader.version import __version__
 
 _MAX_BYTES = 512 * 1024
 _BACKUP_COUNT = 3

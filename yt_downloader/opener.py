@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-import log
+from yt_downloader import log
 
 _log = log.get(__name__)
 

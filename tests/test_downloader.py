@@ -5,7 +5,7 @@ from typing import Any, cast
 
 import pytest
 
-import downloader
+from yt_downloader import downloader
 
 
 # --------------------------------------------------------------------------

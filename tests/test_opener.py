@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-import opener
+from yt_downloader import opener
 
 
 @pytest.fixture

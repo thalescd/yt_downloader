@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 from pytubefix.file_system import file_system_verify
 
-import downloader
+from yt_downloader import downloader
 
 
 class RecordingStream:

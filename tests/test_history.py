@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-import history
+from yt_downloader import history
 
 
 @pytest.fixture

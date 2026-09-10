@@ -27,7 +27,7 @@ if errorlevel 1 (
 )
 
 echo Gerando executavel...
-.venv\Scripts\pyinstaller --onefile --windowed --name "YT Downloader" --icon=assets\icon.ico --collect-all pytubefix --collect-all sv_ttk app.py
+.venv\Scripts\pyinstaller --onefile --windowed --name "YT Downloader" --icon=assets\icon.ico --collect-all pytubefix --collect-all sv_ttk --paths . yt_downloader\__main__.py
 if errorlevel 1 (
     echo ERRO: Falha ao gerar o executavel.
     pause

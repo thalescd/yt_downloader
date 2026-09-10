@@ -9,13 +9,9 @@ from typing import Optional
 
 import sv_ttk
 
-import config
-import history
-import log
-import opener
-import urls
-from downloader import download, download_playlist, has_ffmpeg
-from version import APP_NAME, __version__
+from yt_downloader import config, history, log, opener, urls
+from yt_downloader.downloader import download, download_playlist, has_ffmpeg
+from yt_downloader.version import APP_NAME, __version__
 
 _log = log.get(__name__)
 
@@ -400,8 +396,3 @@ class HistoryWindow(tk.Toplevel):
             return
         history.clear()
         self._load()
-
-
-if __name__ == "__main__":
-    log.setup()
-    App().mainloop()

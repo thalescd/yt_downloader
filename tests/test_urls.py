@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-import urls
+from yt_downloader import urls
 
 
 @pytest.mark.parametrize(

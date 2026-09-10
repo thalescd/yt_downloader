@@ -63,6 +63,13 @@ Só os testes:
 .venv/bin/pytest          # Linux
 ```
 
+Para abrir o app sem passar pelo `setup`:
+
+```bash
+.venv\Scripts\python -m yt_downloader   # Windows
+.venv/bin/python -m yt_downloader      # Linux
+```
+
 A suíte não acessa a rede — os objetos do `pytubefix` são substituídos por dublês.
 
 Para ativar a verificação automática a cada commit:
@@ -81,20 +88,21 @@ O app é portátil — `config.ini`, `history.json` e `logs\` ficam todos ao lad
 
 ```
 yt_downloader/
-├── app.py                    # interface gráfica (Tkinter + sv_ttk)
-├── downloader.py             # lógica de download (pytubefix + ffmpeg)
-├── urls.py                   # validação e classificação de URLs
-├── opener.py                 # abre a pasta no gerenciador do sistema
-├── history.py                # persistência do histórico de downloads
-├── config.py                 # persistência de configurações (tema, limites)
-├── log.py                    # configuração do logging em arquivo
-├── paths.py                  # resolução de diretórios da aplicação
-├── version.py                # nome e versão da aplicação
+├── yt_downloader/            # o código da aplicação
+│   ├── __main__.py           # ponto de entrada (python -m yt_downloader)
+│   ├── app.py                # interface gráfica (Tkinter + sv_ttk)
+│   ├── downloader.py         # lógica de download (pytubefix + ffmpeg)
+│   ├── urls.py               # validação e classificação de URLs
+│   ├── opener.py             # abre a pasta no gerenciador do sistema
+│   ├── history.py            # persistência do histórico de downloads
+│   ├── config.py             # persistência de configurações (tema, limites)
+│   ├── log.py                # configuração do logging em arquivo
+│   ├── paths.py              # resolução de diretórios da aplicação
+│   └── version.py            # nome e versão da aplicação
 ├── tests/                    # suíte de testes (pytest, sem rede)
-├── logs/                     # gerado em execução (ignorado pelo git)
 ├── assets/
 │   └── icon.ico              # ícone do executável
-├── .github/workflows/ci.yml  # lint, tipos e testes no GitHub Actions
+├── .github/workflows/ci.yml  # dispara as verificações a cada push e PR
 ├── requirements.txt          # dependências de runtime
 ├── requirements-dev.txt      # dependências de build e dev
 ├── pyproject.toml            # configuração de Ruff, Pyright e Pytest
@@ -105,6 +113,8 @@ yt_downloader/
 ├── LICENSE
 └── README.md
 ```
+
+Gerados em execução, ao lado do executável e ignorados pelo git: `config.ini`, `history.json` e `logs/`.
 
 ## Aviso
 

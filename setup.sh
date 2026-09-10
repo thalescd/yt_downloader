@@ -39,4 +39,4 @@ echo "Instalando dependências..."
 
 echo
 echo "Setup concluído! Abrindo o app..."
-exec .venv/bin/python app.py
+exec .venv/bin/python -m yt_downloader
