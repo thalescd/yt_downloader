@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
-
-from version import APP_NAME
 
 
 def app_dir() -> Path:
@@ -14,13 +11,11 @@ def app_dir() -> Path:
 
 
 def log_dir() -> Path:
-    """Pasta de logs, sempre gravável pelo usuário.
+    """Pasta de logs, ao lado do executável.
 
-    Não usa app_dir() de propósito: instalado em Program Files ele é
-    somente-leitura, e é exatamente nesse cenário que o log importa.
+    O app é portátil: configuração, histórico e logs ficam todos junto do
+    executável, e só os downloads vão para fora. Se a pasta for
+    somente-leitura, log.setup() cai para stderr em vez de impedir o app
+    de abrir.
     """
-    if sys.platform == "win32":
-        base = os.environ.get("LOCALAPPDATA")
-        if base:
-            return Path(base) / APP_NAME / "logs"
-    return Path.home() / ".local" / "state" / "yt-downloader" / "logs"
+    return app_dir() / "logs"

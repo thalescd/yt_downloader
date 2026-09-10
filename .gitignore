@@ -7,3 +7,8 @@ build/
 .env
 .pytest_cache/
 .ruff_cache/
+
+# Gerados em execução, ao lado do executável
+config.ini
+history.json
+logs/

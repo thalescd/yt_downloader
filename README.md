@@ -58,7 +58,9 @@ Para ativar a verificação automática a cada commit:
 
 ## Logs
 
-Erros são registrados em `%LOCALAPPDATA%\YT Downloader\logs\app.log`, com rotação a cada 512 KB (3 arquivos). Como o executável é gerado com `--windowed`, não há console: esse arquivo é a única forma de diagnosticar uma falha em máquina de usuário.
+Erros são registrados em `logs\app.log`, na pasta do executável, com rotação a cada 512 KB (3 arquivos). Como o executável é gerado com `--windowed`, não há console: esse arquivo é a única forma de diagnosticar uma falha em máquina de usuário.
+
+O app é portátil — `config.ini`, `history.json` e `logs\` ficam todos ao lado do executável, então basta copiar a pasta para levar tudo junto. Os downloads são a única coisa que vai para fora, na pasta de destino escolhida.
 
 ## Estrutura
 
@@ -73,6 +75,7 @@ yt_downloader/
 ├── paths.py                  # resolução de diretórios da aplicação
 ├── version.py                # nome e versão da aplicação
 ├── tests/                    # suíte de testes (pytest, sem rede)
+├── logs/                     # gerado em execução (ignorado pelo git)
 ├── assets/
 │   └── icon.ico              # ícone do executável
 ├── .github/workflows/ci.yml  # lint, tipos e testes no GitHub Actions
