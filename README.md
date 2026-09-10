@@ -17,35 +17,50 @@ Baixa vídeos ou áudio do YouTube com interface gráfica.
 
 - Python 3.12+ (para rodar via terminal ou gerar o executável)
 - O `.exe` gerado não exige Python instalado na máquina de destino
+- No Linux, o `tkinter` costuma vir em pacote separado: `python3-tk` (Debian/Ubuntu), `python3-tkinter` (Fedora), `tk` (Arch)
 - **ffmpeg** (opcional) — necessário para download em 720p, 1080p e "Melhor disponível" em alta qualidade. Instale com `winget install ffmpeg`.
 
 ## Setup e execução
 
-Dê duplo clique em `setup.bat`. Ele irá:
+**Windows** — dê duplo clique em `setup.bat`.
+
+**Linux** — rode `./setup.sh`.
+
+Ambos fazem o mesmo:
 1. Verificar se o Python está instalado
 2. Criar o ambiente virtual `.venv` (apenas na primeira vez)
 3. Instalar as dependências
 4. Abrir o app automaticamente
 
+No Linux, o `setup.sh` também confere se o `tkinter` está presente — ele costuma vir num pacote à parte (`python3-tk` no Debian/Ubuntu) e sua ausência só apareceria como erro ao abrir o app.
+
 ## Gerar executável
 
-Com o setup já feito, dê duplo clique em `build.bat`. O `.exe` será gerado em `dist\YT Downloader.exe`.
+**Windows** — com o setup já feito, dê duplo clique em `build.bat`. O `.exe` será gerado em `dist\YT Downloader.exe`.
+
+**Linux** — `./build.sh` gera um binário Linux em `dist/yt-downloader`. O PyInstaller não faz compilação cruzada: o `.exe` do Windows precisa ser gerado no Windows.
 
 ## Desenvolvimento
 
 Instale as dependências de desenvolvimento e rode todas as verificações:
 
 ```bash
+# Windows
 .venv\Scripts\pip install -r requirements-dev.txt
 lint.bat
+
+# Linux
+.venv/bin/pip install -r requirements-dev.txt
+./lint.sh
 ```
 
-`lint.bat` roda, em ordem: Ruff (estilo e imports), Ruff (formatação), Pyright (tipos) e Pytest. As mesmas quatro etapas rodam no CI a cada push e pull request.
+Os dois rodam, em ordem: Ruff (estilo e imports), Ruff (formatação), Pyright (tipos) e Pytest. As mesmas quatro etapas rodam no CI a cada push e pull request.
 
 Só os testes:
 
 ```bash
-.venv\Scripts\pytest
+.venv\Scripts\pytest     # Windows
+.venv/bin/pytest          # Linux
 ```
 
 A suíte não acessa a rede — os objetos do `pytubefix` são substituídos por dublês.
@@ -83,9 +98,9 @@ yt_downloader/
 ├── requirements-dev.txt      # dependências de build e dev
 ├── pyproject.toml            # configuração de Ruff, Pyright e Pytest
 ├── .pre-commit-config.yaml   # hooks de commit
-├── setup.bat                 # configura o ambiente e abre o app
-├── build.bat                 # gera o executável
-├── lint.bat                  # roda lint, tipos e testes
+├── setup.bat / setup.sh      # configura o ambiente e abre o app
+├── build.bat / build.sh      # gera o executável
+├── lint.bat / lint.sh        # roda lint, tipos e testes
 ├── LICENSE
 └── README.md
 ```

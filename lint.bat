@@ -25,8 +25,10 @@ if errorlevel 1 (
     exit /b 1
 )
 
+rem --pythonpath amarra a checagem ao venv: sem ele o Pyright resolve os
+rem imports contra o Python do PATH, que nao tem as dependencias instaladas.
 echo [3/4] Pyright...
-.venv\Scripts\pyright
+.venv\Scripts\pyright --pythonpath .venv\Scripts\python.exe
 if errorlevel 1 (
     echo ERRO: Problemas de tipo encontrados pelo Pyright.
     pause
