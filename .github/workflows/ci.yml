@@ -25,10 +25,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements-dev.txt
 
-      # As etapas vivem no lint.sh, que os desenvolvedores rodam localmente,
+      # As etapas vivem no scripts/lint.sh, que os desenvolvedores rodam localmente,
       # para que CI e máquina local não possam divergir. Sem .venv aqui, o
       # script usa as ferramentas do PATH.
       - name: Verificações (estilo, tipos e testes)
         env:
           RUFF_OUTPUT_FORMAT: github  # anotações inline nos arquivos do PR
-        run: ./lint.sh
+        run: ./scripts/lint.sh

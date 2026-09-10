@@ -53,8 +53,8 @@ def test_ci_usa_a_mesma_versao_de_python_do_pyright() -> None:
 
 
 def test_ci_delega_as_verificacoes_ao_lint_sh() -> None:
-    """A razão de o CI não repetir as etapas: uma definição só, em lint.sh."""
+    """A razão de o CI não repetir as etapas: uma definição só, em scripts/lint.sh."""
     workflow = (RAIZ / ".github/workflows/ci.yml").read_text(encoding="utf-8")
-    assert "./lint.sh" in workflow
+    assert "./scripts/lint.sh" in workflow
     for ferramenta in ("run: ruff", "run: pyright", "run: pytest"):
         assert ferramenta not in workflow, f"CI voltou a chamar {ferramenta} direto"

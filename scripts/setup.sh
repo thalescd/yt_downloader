@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Equivalente Linux de setup.bat: prepara o ambiente e abre o app.
 set -euo pipefail
-cd "$(dirname "$0")"
+# Os comandos abaixo assumem a raiz do projeto, não a pasta scripts/.
+cd "$(dirname "$0")/.."
 
 echo "=== YT Downloader - Setup ==="
 echo

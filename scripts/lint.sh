@@ -6,7 +6,8 @@
 # Com .venv, usa as ferramentas dele. Sem .venv — caso do CI, que instala no
 # Python do próprio runner —, usa as do PATH.
 set -uo pipefail
-cd "$(dirname "$0")"
+# Os comandos abaixo assumem a raiz do projeto, não a pasta scripts/.
+cd "$(dirname "$0")/.."
 
 echo "=== YT Downloader - Verificações ==="
 echo
@@ -25,7 +26,7 @@ elif command -v ruff >/dev/null 2>&1; then
     corrigir="ruff"
 else
     echo "ERRO: ambiente virtual não encontrado e as ferramentas não estão no PATH."
-    echo "Execute ./setup.sh e depois instale as dependências de desenvolvimento:"
+    echo "Execute ./scripts/setup.sh e depois instale as dependências de desenvolvimento:"
     echo "  .venv/bin/pip install -r requirements-dev.txt"
     exit 1
 fi

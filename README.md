@@ -22,9 +22,9 @@ Baixa vídeos ou áudio do YouTube com interface gráfica.
 
 ## Setup e execução
 
-**Windows** — dê duplo clique em `setup.bat`.
+**Windows** — dê duplo clique em `scripts\setup.bat`.
 
-**Linux** — rode `./setup.sh`.
+**Linux** — rode `./scripts/setup.sh`.
 
 Ambos fazem o mesmo:
 1. Verificar se o Python está instalado
@@ -32,13 +32,13 @@ Ambos fazem o mesmo:
 3. Instalar as dependências
 4. Abrir o app automaticamente
 
-No Linux, o `setup.sh` também confere se o `tkinter` está presente — ele costuma vir num pacote à parte (`python3-tk` no Debian/Ubuntu) e sua ausência só apareceria como erro ao abrir o app.
+No Linux, o `scripts/setup.sh` também confere se o `tkinter` está presente — ele costuma vir num pacote à parte (`python3-tk` no Debian/Ubuntu) e sua ausência só apareceria como erro ao abrir o app.
 
 ## Gerar executável
 
-**Windows** — com o setup já feito, dê duplo clique em `build.bat`. O `.exe` será gerado em `dist\YT Downloader.exe`.
+**Windows** — com o setup já feito, dê duplo clique em `scripts\build.bat`. O `.exe` será gerado em `dist\YT Downloader.exe`.
 
-**Linux** — `./build.sh` gera um binário Linux em `dist/yt-downloader`. O PyInstaller não faz compilação cruzada: o `.exe` do Windows precisa ser gerado no Windows.
+**Linux** — `./scripts/build.sh` gera um binário Linux em `dist/yt-downloader`. O PyInstaller não faz compilação cruzada: o `.exe` do Windows precisa ser gerado no Windows.
 
 ## Desenvolvimento
 
@@ -47,11 +47,11 @@ Instale as dependências de desenvolvimento e rode todas as verificações:
 ```bash
 # Windows
 .venv\Scripts\pip install -r requirements-dev.txt
-lint.bat
+scripts\lint.bat
 
 # Linux
 .venv/bin/pip install -r requirements-dev.txt
-./lint.sh
+./scripts/lint.sh
 ```
 
 Os dois rodam, em ordem: Ruff (estilo e imports), Ruff (formatação), Pyright (tipos) e Pytest. As mesmas quatro etapas rodam no CI a cada push e pull request.
@@ -107,9 +107,7 @@ yt_downloader/
 ├── requirements-dev.txt      # dependências de build e dev
 ├── pyproject.toml            # configuração de Ruff, Pyright e Pytest
 ├── .pre-commit-config.yaml   # hooks de commit
-├── setup.bat / setup.sh      # configura o ambiente e abre o app
-├── build.bat / build.sh      # gera o executável
-├── lint.bat / lint.sh        # roda lint, tipos e testes
+├── scripts/                  # setup, lint e build (.bat e .sh)
 ├── LICENSE
 └── README.md
 ```

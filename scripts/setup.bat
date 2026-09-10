@@ -1,4 +1,6 @@
 @echo off
+rem Os comandos abaixo assumem a raiz do projeto, nao a pasta scripts\.
+cd /d "%~dp0.."
 echo === YT Downloader - Setup ===
 echo.
 

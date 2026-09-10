@@ -5,14 +5,15 @@
 # compilação cruzada — o executável do Windows precisa ser gerado no Windows,
 # com build.bat.
 set -euo pipefail
-cd "$(dirname "$0")"
+# Os comandos abaixo assumem a raiz do projeto, não a pasta scripts/.
+cd "$(dirname "$0")/.."
 
 echo "=== YT Downloader - Build (Linux) ==="
 echo
 
 if [ ! -d .venv ]; then
     echo "ERRO: ambiente virtual não encontrado."
-    echo "Execute ./setup.sh primeiro."
+    echo "Execute ./scripts/setup.sh primeiro."
     exit 1
 fi
 

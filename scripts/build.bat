@@ -1,4 +1,6 @@
 @echo off
+rem Os comandos abaixo assumem a raiz do projeto, nao a pasta scripts\.
+cd /d "%~dp0.."
 echo === YT Downloader - Build ===
 echo.
 
@@ -12,7 +14,7 @@ if errorlevel 1 (
 
 if not exist .venv\ (
     echo ERRO: Ambiente virtual nao encontrado.
-    echo Execute setup.bat primeiro e tente novamente.
+    echo Execute scripts\setup.bat primeiro e tente novamente.
     pause
     exit /b 1
 )
