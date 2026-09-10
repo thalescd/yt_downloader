@@ -25,14 +25,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements-dev.txt
 
-      - name: "Ruff: estilo e imports"
-        run: ruff check --output-format=github .
-
-      - name: "Ruff: formatação"
-        run: ruff format --check .
-
-      - name: Pyright
-        run: pyright
-
-      - name: Testes
-        run: pytest
+      # As etapas vivem no lint.sh, que os desenvolvedores rodam localmente,
+      # para que CI e máquina local não possam divergir. Sem .venv aqui, o
+      # script usa as ferramentas do PATH.
+      - name: Verificações (estilo, tipos e testes)
+        env:
+          RUFF_OUTPUT_FORMAT: github  # anotações inline nos arquivos do PR
+        run: ./lint.sh
