@@ -14,12 +14,13 @@ import config
 import history
 import urls
 from downloader import download, download_playlist, has_ffmpeg
+from version import APP_NAME, __version__
 
 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("YT Downloader")
+        self.title(f"{APP_NAME} {__version__}")
         self.resizable(False, False)
         self._queue = queue.Queue()
         self._config = config.load()
