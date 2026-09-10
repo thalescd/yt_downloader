@@ -84,6 +84,7 @@ yt_downloader/
 ├── app.py                    # interface gráfica (Tkinter + sv_ttk)
 ├── downloader.py             # lógica de download (pytubefix + ffmpeg)
 ├── urls.py                   # validação e classificação de URLs
+├── opener.py                 # abre a pasta no gerenciador do sistema
 ├── history.py                # persistência do histórico de downloads
 ├── config.py                 # persistência de configurações (tema, limites)
 ├── log.py                    # configuração do logging em arquivo

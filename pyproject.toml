@@ -7,9 +7,10 @@ select = ["E", "W", "F", "I"]
 
 [tool.pyright]
 pythonVersion = "3.12"
-# O app é Windows-only (os.startfile, scripts .bat). Fixar a plataforma faz
-# a checagem valer o mesmo rodando no CI em Linux.
-pythonPlatform = "Windows"
+# O código nasceu Windows-first, então o risco real é uma chamada exclusiva
+# do Windows sem guarda de plataforma. Fixar "Linux" faz o Pyright reprovar
+# essas chamadas, aqui e no CI, mesmo quando rodado a partir do Windows.
+pythonPlatform = "Linux"
 typeCheckingMode = "basic"
 reportMissingTypeStubs = false
 

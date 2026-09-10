@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import queue
 import threading
 import tkinter as tk
@@ -13,6 +12,7 @@ import sv_ttk
 import config
 import history
 import log
+import opener
 import urls
 from downloader import download, download_playlist, has_ffmpeg
 from version import APP_NAME, __version__
@@ -389,7 +389,11 @@ class HistoryWindow(tk.Toplevel):
         if not folder.exists():
             messagebox.showwarning("Aviso", "A pasta não existe mais.", parent=self)
             return
-        os.startfile(folder)
+        try:
+            opener.open_folder(folder)
+        except Exception as exc:
+            _log.exception("Falha ao abrir a pasta %s", folder)
+            messagebox.showwarning("Aviso", f"Não foi possível abrir a pasta:\n{exc}", parent=self)
 
     def _clear(self) -> None:
         if not messagebox.askyesno("Confirmar", "Limpar todo o histórico?", parent=self):
