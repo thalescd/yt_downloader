@@ -12,6 +12,7 @@ import sv_ttk
 
 import config
 import history
+import urls
 from downloader import download, download_playlist, has_ffmpeg
 
 
@@ -129,29 +130,6 @@ class App(tk.Tk):
         if path:
             self._path_var.set(path)
 
-    @staticmethod
-    def _is_youtube_music_url(url: str) -> bool:
-        return "music.youtube.com" in url.lower()
-
-    @staticmethod
-    def _is_playlist_url(url: str) -> bool:
-        return "youtube.com/playlist" in url.lower()
-
-    @staticmethod
-    def _is_valid_youtube_url(url: str) -> bool:
-        url = url.lower()
-        return any(
-            host in url
-            for host in (
-                "youtube.com/watch",
-                "youtu.be/",
-                "youtube.com/shorts/",
-                "youtube.com/live/",
-                "youtube.com/playlist",
-                "music.youtube.com",
-            )
-        )
-
     def _update_quality_state(self) -> None:
         is_audio = self._type_var.get() == "audio"
         if is_audio:
@@ -170,7 +148,7 @@ class App(tk.Tk):
 
     def _on_url_change(self, _name: str, _index: str, _mode: str) -> None:
         url = self._url_var.get()
-        if self._is_youtube_music_url(url):
+        if urls.is_youtube_music(url):
             self._type_var.set("audio")
             self._radio_video.config(state="disabled")
             self._radio_audio.config(state="normal")
@@ -184,7 +162,7 @@ class App(tk.Tk):
         if not url:
             messagebox.showwarning("Aviso", "Digite uma URL antes de baixar.")
             return
-        if not self._is_valid_youtube_url(url):
+        if not urls.is_valid_youtube_url(url):
             messagebox.showwarning(
                 "Aviso",
                 "URL inválida. Use um link do YouTube válido.\nExemplo: https://youtube.com/watch?v=...",
@@ -215,7 +193,7 @@ class App(tk.Tk):
 
     def _run_download(self, url: str, audio_only: bool, output_path: str, resolution: str):
         try:
-            if self._is_playlist_url(url):
+            if urls.is_playlist(url):
                 self._queue.put(("playlist_loading", None))
                 downloaded, failed = download_playlist(
                     url,
