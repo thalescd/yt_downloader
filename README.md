@@ -1,5 +1,7 @@
 # YT Downloader
 
+[![CI](https://github.com/thalescd/yt_downloader/actions/workflows/ci.yml/badge.svg)](https://github.com/thalescd/yt_downloader/actions/workflows/ci.yml)
+
 Baixa vídeos ou áudio do YouTube com interface gráfica.
 
 ## Funcionalidades
@@ -13,7 +15,7 @@ Baixa vídeos ou áudio do YouTube com interface gráfica.
 
 ## Requisitos
 
-- Python 3.8+ (para rodar via terminal ou gerar o executável)
+- Python 3.12+ (para rodar via terminal ou gerar o executável)
 - O `.exe` gerado não exige Python instalado na máquina de destino
 - **ffmpeg** (opcional) — necessário para download em 720p, 1080p e "Melhor disponível" em alta qualidade. Instale com `winget install ffmpeg`.
 
@@ -29,18 +31,34 @@ Dê duplo clique em `setup.bat`. Ele irá:
 
 Com o setup já feito, dê duplo clique em `build.bat`. O `.exe` será gerado em `dist\YT Downloader.exe`.
 
-## Linting
+## Desenvolvimento
+
+Instale as dependências de desenvolvimento e rode todas as verificações:
 
 ```bash
 .venv\Scripts\pip install -r requirements-dev.txt
 lint.bat
 ```
 
-Para ativar verificação automática a cada commit:
+`lint.bat` roda, em ordem: Ruff (estilo e imports), Ruff (formatação), Pyright (tipos) e Pytest. As mesmas quatro etapas rodam no CI a cada push e pull request.
+
+Só os testes:
+
+```bash
+.venv\Scripts\pytest
+```
+
+A suíte não acessa a rede — os objetos do `pytubefix` são substituídos por dublês.
+
+Para ativar a verificação automática a cada commit:
 
 ```bash
 .venv\Scripts\pre-commit install
 ```
+
+## Logs
+
+Erros são registrados em `%LOCALAPPDATA%\YT Downloader\logs\app.log`, com rotação a cada 512 KB (3 arquivos). Como o executável é gerado com `--windowed`, não há console: esse arquivo é a única forma de diagnosticar uma falha em máquina de usuário.
 
 ## Estrutura
 
@@ -48,16 +66,31 @@ Para ativar verificação automática a cada commit:
 yt_downloader/
 ├── app.py                    # interface gráfica (Tkinter + sv_ttk)
 ├── downloader.py             # lógica de download (pytubefix + ffmpeg)
+├── urls.py                   # validação e classificação de URLs
 ├── history.py                # persistência do histórico de downloads
 ├── config.py                 # persistência de configurações (tema, limites)
+├── log.py                    # configuração do logging em arquivo
+├── paths.py                  # resolução de diretórios da aplicação
+├── version.py                # nome e versão da aplicação
+├── tests/                    # suíte de testes (pytest, sem rede)
 ├── assets/
 │   └── icon.ico              # ícone do executável
+├── .github/workflows/ci.yml  # lint, tipos e testes no GitHub Actions
 ├── requirements.txt          # dependências de runtime
 ├── requirements-dev.txt      # dependências de build e dev
-├── pyproject.toml            # configuração do Ruff e Pyright
+├── pyproject.toml            # configuração de Ruff, Pyright e Pytest
 ├── .pre-commit-config.yaml   # hooks de commit
 ├── setup.bat                 # configura o ambiente e abre o app
 ├── build.bat                 # gera o executável
-├── lint.bat                  # roda Ruff e Pyright
+├── lint.bat                  # roda lint, tipos e testes
+├── LICENSE
 └── README.md
 ```
+
+## Aviso
+
+Ferramenta destinada a uso pessoal, para baixar conteúdo próprio ou de domínio público. Baixar vídeos do YouTube pode contrariar os [Termos de Serviço](https://www.youtube.com/t/terms) da plataforma — o uso é de responsabilidade de quem executa.
+
+## Licença
+
+[MIT](LICENSE).
