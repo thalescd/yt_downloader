@@ -25,22 +25,29 @@ def test_windows_usa_startfile(chamadas: list, monkeypatch: pytest.MonkeyPatch) 
     assert chamadas == [("startfile", Path("/tmp/x"))]
 
 
+# O destino esperado sai de str(Path(...)), e não de uma string fixa: só o
+# sys.platform é simulado, então o Path continua sendo o da máquina real e,
+# no Windows, "/tmp/x" vira "\tmp\x". Comparar com literal fazia estes testes
+# passarem no CI (Ubuntu) e falharem em toda máquina Windows.
+PASTA = Path("/tmp/x")
+
+
 def test_macos_usa_open(chamadas: list, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(opener.sys, "platform", "darwin")
-    opener.open_folder(Path("/tmp/x"))
-    assert chamadas[0][0] == ["open", "/tmp/x"]
+    opener.open_folder(PASTA)
+    assert chamadas[0][0] == ["open", str(PASTA)]
 
 
 def test_linux_usa_xdg_open(chamadas: list, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(opener.sys, "platform", "linux")
-    opener.open_folder(Path("/tmp/x"))
-    assert chamadas[0][0] == ["xdg-open", "/tmp/x"]
+    opener.open_folder(PASTA)
+    assert chamadas[0][0] == ["xdg-open", str(PASTA)]
 
 
 def test_outros_unix_caem_em_xdg_open(chamadas: list, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(opener.sys, "platform", "freebsd14")
-    opener.open_folder(Path("/tmp/x"))
-    assert chamadas[0][0] == ["xdg-open", "/tmp/x"]
+    opener.open_folder(PASTA)
+    assert chamadas[0][0] == ["xdg-open", str(PASTA)]
 
 
 def test_verifica_o_codigo_de_saida(chamadas: list, monkeypatch: pytest.MonkeyPatch) -> None:
