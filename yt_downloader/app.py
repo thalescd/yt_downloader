@@ -276,15 +276,18 @@ class App(tk.Tk):
                     self._btn.config(state="normal")
                     try:
                         media_type = "áudio" if self._current_audio_only else "vídeo"
+                        # A url é a de cada vídeo, não a da playlist: gravar o
+                        # link da playlist em todas as linhas impediria voltar
+                        # a um vídeo específico pelo botão "Copiar URL".
                         entries = [
                             history.new_entry(
-                                self._current_url,
+                                video_url,
                                 Path(fp).stem,
                                 media_type,
                                 actual_res,
                                 fp,
                             )
-                            for fp, actual_res in downloaded
+                            for video_url, fp, actual_res in downloaded
                         ]
                         if entries:
                             history.save_many(entries, self._config.max_entries)
@@ -305,7 +308,7 @@ class App(tk.Tk):
                         # destino: a playlist cria uma subpasta com o próprio
                         # nome, e é ela que o usuário precisa abrir.
                         pasta = (
-                            Path(downloaded[0][0]).parent if downloaded else self._path_var.get()
+                            Path(downloaded[0][1]).parent if downloaded else self._path_var.get()
                         )
                         self._status_var.set(f"Concluído. {len(downloaded)} arquivo(s) baixados.")
                         messagebox.showinfo(

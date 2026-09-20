@@ -346,6 +346,32 @@ def test_videos_da_playlist_vao_para_a_subpasta(
     assert destinos == [str(tmp_path / "musicas")] * 2
 
 
+def test_cada_item_traz_a_url_do_proprio_video(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A url da playlist em todas as linhas do histórico impediria voltar a um
+    vídeo específico pelo botão "Copiar URL"."""
+    pl = FakePlaylist("musicas", quantos=3)
+    _playlist_com(monkeypatch, pl)
+    baixados, _ = downloader.download_playlist(
+        "https://youtube.com/playlist?list=x", False, str(tmp_path)
+    )
+    assert [url for url, _, _ in baixados] == pl.video_urls
+
+
+def test_item_baixado_tem_url_caminho_e_qualidade(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _playlist_com(monkeypatch, FakePlaylist("musicas", quantos=1))
+    baixados, _ = downloader.download_playlist(
+        "https://youtube.com/playlist?list=x", False, str(tmp_path)
+    )
+    url, caminho, qualidade = baixados[0]
+    assert url.startswith("https://")
+    assert caminho.endswith(".mp4")
+    assert qualidade == "720p"
+
+
 def test_titulo_que_explode_nao_derruba_a_playlist(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

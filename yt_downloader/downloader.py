@@ -42,7 +42,14 @@ def download_playlist(
     on_progress=None,
     on_video_start: Optional[Callable[[int, int, str], None]] = None,
     resolution: str = "best",
-) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+) -> tuple[list[tuple[str, str, str]], list[tuple[str, str]]]:
+    """Baixa a playlist inteira, sem deixar que uma falha derrube o resto.
+
+    Cada item baixado volta como (url do vídeo, caminho, qualidade). A url é
+    a de cada vídeo, e não a da playlist, porque é ela que vai para o
+    histórico: registrar o link da playlist em todas as linhas tornaria
+    impossível voltar a um vídeo específico a partir dali.
+    """
     pl = Playlist(url)
     urls = list(pl.video_urls)
     if not urls:
@@ -58,7 +65,7 @@ def download_playlist(
     destino = str(_playlist_folder(output_path, titulo))
 
     total = len(urls)
-    downloaded: list[tuple[str, str]] = []
+    downloaded: list[tuple[str, str, str]] = []
     failed: list[tuple[str, str]] = []
 
     for index, video_url in enumerate(urls, start=1):
@@ -66,7 +73,8 @@ def download_playlist(
             yt = YouTube(video_url, on_progress_callback=on_progress)
             if on_video_start:
                 on_video_start(index, total, yt.title)
-            downloaded.append(_download_video(yt, audio_only, destino, resolution))
+            caminho, qualidade = _download_video(yt, audio_only, destino, resolution)
+            downloaded.append((video_url, caminho, qualidade))
         except Exception as exc:
             failed.append((video_url, str(exc)))
 
