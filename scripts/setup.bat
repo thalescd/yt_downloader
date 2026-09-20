@@ -1,37 +1,17 @@
 @echo off
-rem Os comandos abaixo assumem a raiz do projeto, nao a pasta scripts\.
+rem Casca fina: a logica das tarefas vive em scripts\tasks.py, uma vez so para
+rem Windows e Linux. So a checagem do proprio Python fica aqui, porque ela
+rem precisa acontecer antes de conseguirmos executar qualquer Python.
 cd /d "%~dp0.."
-echo === YT Downloader - Setup ===
-echo.
 
 python --version >nul 2>&1
 if errorlevel 1 (
     echo ERRO: Python nao encontrado no PATH.
-    echo Instale o Python 3.8+ em https://python.org e marque "Add to PATH".
+    echo Instale o Python 3.12+ em https://python.org e marque "Add to PATH".
     pause
     exit /b 1
 )
 
-if not exist .venv\ (
-    echo Criando ambiente virtual...
-    python -m venv .venv
-    if errorlevel 1 (
-        echo ERRO: Falha ao criar o ambiente virtual.
-        pause
-        exit /b 1
-    )
-) else (
-    echo Ambiente virtual ja existe, pulando criacao.
-)
-
-echo Instalando dependencias...
-.venv\Scripts\pip install -r requirements.txt
-if errorlevel 1 (
-    echo ERRO: Falha ao instalar dependencias.
-    pause
-    exit /b 1
-)
-
-echo.
-echo Setup concluido! Abrindo o app...
-.venv\Scripts\python -m yt_downloader
+python scripts\tasks.py setup
+rem Sem pausa no caminho feliz: o setup termina abrindo o app.
+if errorlevel 1 pause

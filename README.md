@@ -27,12 +27,15 @@ Baixa vídeos ou áudio do YouTube com interface gráfica.
 **Linux** — rode `./scripts/setup.sh`.
 
 Ambos fazem o mesmo:
-1. Verificar se o Python está instalado
-2. Criar o ambiente virtual `.venv` (apenas na primeira vez)
-3. Instalar as dependências
-4. Abrir o app automaticamente
+1. Verificar se há um Python 3.12+ disponível
+2. Conferir se o `tkinter` está presente
+3. Criar o ambiente virtual `.venv` (apenas na primeira vez)
+4. Instalar as dependências
+5. Abrir o app automaticamente
 
-No Linux, o `scripts/setup.sh` também confere se o `tkinter` está presente — ele costuma vir num pacote à parte (`python3-tk` no Debian/Ubuntu) e sua ausência só apareceria como erro ao abrir o app.
+A checagem do `tkinter` existe porque no Linux ele costuma vir num pacote à parte (`python3-tk` no Debian/Ubuntu), e sua ausência só apareceria como erro na hora de abrir o app.
+
+Se o `python` do PATH for anterior ao 3.12, o setup procura um interpretador adequado antes de desistir — pelo launcher `py` no Windows, ou pelo nome versionado no Linux. Usar uma versão antiga criaria em silêncio um ambiente que não roda a suíte de testes.
 
 ## Gerar executável
 
@@ -46,15 +49,24 @@ Instale as dependências de desenvolvimento e rode todas as verificações:
 
 ```bash
 # Windows
-.venv\Scripts\pip install -r requirements-dev.txt
+.venv\Scripts\python -m pip install -r requirements-dev.txt
 scripts\lint.bat
 
 # Linux
-.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m pip install -r requirements-dev.txt
 ./scripts/lint.sh
 ```
 
 Os dois rodam, em ordem: Ruff (estilo e imports), Ruff (formatação), Pyright (tipos) e Pytest. As mesmas quatro etapas rodam no CI a cada push e pull request.
+
+As três tarefas vivem em `scripts/tasks.py`, e os `.bat` e `.sh` são cascas de poucas linhas que chamam esse arquivo — assim a lógica não precisa ser mantida em duas sintaxes que divergem em silêncio. Quem prefere terminal pode chamar direto:
+
+```bash
+python scripts/tasks.py --help
+python scripts/tasks.py lint
+```
+
+O `tasks.py` usa apenas a biblioteca padrão, porque o `setup` roda antes de existir qualquer dependência instalada.
 
 Só os testes:
 
@@ -107,7 +119,7 @@ yt_downloader/
 ├── requirements-dev.txt      # dependências de build e dev
 ├── pyproject.toml            # configuração de Ruff, Pyright e Pytest
 ├── .pre-commit-config.yaml   # hooks de commit
-├── scripts/                  # setup, lint e build (.bat e .sh)
+├── scripts/                  # tasks.py com setup, lint e build; .bat e .sh são cascas
 ├── LICENSE
 └── README.md
 ```
