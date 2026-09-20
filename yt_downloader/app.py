@@ -301,9 +301,15 @@ class App(tk.Tk):
                             f"{len(downloaded)} baixado(s), {len(failed)} falha(s):\n\n{fail_msgs}",
                         )
                     else:
+                        # A pasta vem do arquivo baixado, e não do campo de
+                        # destino: a playlist cria uma subpasta com o próprio
+                        # nome, e é ela que o usuário precisa abrir.
+                        pasta = (
+                            Path(downloaded[0][0]).parent if downloaded else self._path_var.get()
+                        )
                         self._status_var.set(f"Concluído. {len(downloaded)} arquivo(s) baixados.")
                         messagebox.showinfo(
-                            "Sucesso", f"{len(downloaded)} arquivo(s) baixados com sucesso."
+                            "Sucesso", f"{len(downloaded)} arquivo(s) salvos em:\n{pasta}"
                         )
                     return
                 elif kind == "error":

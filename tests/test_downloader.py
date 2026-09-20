@@ -240,3 +240,128 @@ def test_download_rejeita_url_invalida(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(downloader, "YouTube", explode)
     with pytest.raises(ValueError, match="URL inválida"):
         downloader.download("não é url", False, "/tmp")
+
+
+# --------------------------------------------------------------------------
+# Pasta da playlist
+# --------------------------------------------------------------------------
+def test_playlist_ganha_subpasta_com_o_proprio_nome(tmp_path: Path) -> None:
+    destino = downloader._playlist_folder(str(tmp_path), "musicas")
+    assert destino == tmp_path / "musicas"
+    assert destino.is_dir()
+
+
+def test_pasta_existente_e_reaproveitada(tmp_path: Path) -> None:
+    """Rebaixar a mesma playlist completa a pasta que já existe, em vez de
+    criar "musicas (1)" ao lado — os arquivos continuam protegidos um a um."""
+    (tmp_path / "musicas").mkdir()
+    (tmp_path / "musicas" / "ja-baixado.mp4").touch()
+
+    destino = downloader._playlist_folder(str(tmp_path), "musicas")
+    assert destino == tmp_path / "musicas"
+    assert (destino / "ja-baixado.mp4").exists()
+
+
+def test_nome_da_pasta_e_sanitizado(tmp_path: Path) -> None:
+    destino = downloader._playlist_folder(str(tmp_path), 'Rock: o "melhor"/2024')
+    assert destino == tmp_path / "Rock_ o _melhor__2024"
+    assert destino.is_dir()
+
+
+def test_nome_longo_demais_e_truncado(tmp_path: Path) -> None:
+    """O caminho no Windows para em 260 caracteres, e o que a pasta não
+    consumir sobra para o nome do vídeo."""
+    destino = downloader._playlist_folder(str(tmp_path), "a" * 300)
+    assert len(destino.name) == downloader._MAX_FOLDER_NAME
+
+
+def test_truncagem_nao_deixa_ponto_no_fim(tmp_path: Path) -> None:
+    """O Windows recusa pasta terminada em ponto, e o corte pode criar uma."""
+    titulo = "b" * (downloader._MAX_FOLDER_NAME - 1) + ".. sufixo"
+    destino = downloader._playlist_folder(str(tmp_path), titulo)
+    assert not destino.name.endswith((".", " "))
+    assert destino.is_dir()
+
+
+@pytest.mark.parametrize("titulo", ["", "   ", "..."])
+def test_titulo_inutilizavel_cai_no_destino_escolhido(tmp_path: Path, titulo: str) -> None:
+    assert downloader._playlist_folder(str(tmp_path), titulo) == tmp_path
+
+
+def test_titulo_so_de_caracteres_proibidos_vira_sublinhados(tmp_path: Path) -> None:
+    """Não é o mesmo caso do título vazio: "///" tem conteúdo, e o sanitizador
+    troca proibido por "_" como faz em qualquer nome de arquivo do app."""
+    assert downloader._playlist_folder(str(tmp_path), "///") == tmp_path / "___"
+
+
+def test_nome_ocupado_por_arquivo_cai_no_destino_escolhido(tmp_path: Path) -> None:
+    """Perder o agrupamento é melhor do que abortar o download inteiro."""
+    (tmp_path / "musicas").touch()
+    assert downloader._playlist_folder(str(tmp_path), "musicas") == tmp_path
+
+
+# --------------------------------------------------------------------------
+# download_playlist usa a subpasta
+# --------------------------------------------------------------------------
+class FakePlaylist:
+    """`title` é property porque no pytubefix também é — e é justamente por
+    fazer parsing na hora do acesso que ela pode levantar."""
+
+    def __init__(self, titulo: str = "Minha Playlist", quantos: int = 2) -> None:
+        self._titulo = titulo
+        self.video_urls = [f"https://youtu.be/v{i}" for i in range(quantos)]
+
+    @property
+    def title(self) -> str:
+        return self._titulo
+
+
+class PlaylistSemTitulo(FakePlaylist):
+    """Playlist cujo título explode ao ser lido, como quando o YouTube muda o
+    layout da página e o parsing do pytubefix deixa de casar."""
+
+    @property
+    def title(self) -> str:
+        raise KeyError("title")
+
+
+def _playlist_com(monkeypatch: pytest.MonkeyPatch, pl: FakePlaylist) -> list[str]:
+    """Aparelha download_playlist e devolve a lista que recebe cada destino."""
+    destinos: list[str] = []
+    monkeypatch.setattr(downloader, "Playlist", lambda url: pl)
+    monkeypatch.setattr(downloader, "YouTube", lambda url, **kw: FakeYouTube([], "Vídeo"))
+    monkeypatch.setattr(
+        downloader,
+        "_download_video",
+        lambda yt, audio, out, res: (destinos.append(out), (f"{out}/x.mp4", "720p"))[1],
+    )
+    return destinos
+
+
+def test_videos_da_playlist_vao_para_a_subpasta(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    destinos = _playlist_com(monkeypatch, FakePlaylist("musicas"))
+    downloader.download_playlist("https://youtube.com/playlist?list=x", False, str(tmp_path))
+    assert destinos == [str(tmp_path / "musicas")] * 2
+
+
+def test_titulo_que_explode_nao_derruba_a_playlist(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """O título é só o nome da pasta: sem ele os vídeos ainda baixam, soltos
+    no destino escolhido."""
+    destinos = _playlist_com(monkeypatch, PlaylistSemTitulo())
+    baixados, falhas = downloader.download_playlist(
+        "https://x/playlist?list=y", False, str(tmp_path)
+    )
+    assert destinos == [str(tmp_path)] * 2
+    assert len(baixados) == 2 and not falhas
+
+
+def test_playlist_vazia_continua_reclamando(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _playlist_com(monkeypatch, FakePlaylist(quantos=0))
+    with pytest.raises(RuntimeError, match="não contém vídeos"):
+        downloader.download_playlist("https://x/playlist?list=y", False, str(tmp_path))

@@ -9,7 +9,16 @@ from typing import Callable, Optional
 from pytubefix import Playlist, YouTube
 from pytubefix.exceptions import RegexMatchError
 
+from yt_downloader import log
+
+_log = log.get(__name__)
+
 _RESOLUTION_FALLBACK = ["1080p", "720p", "480p", "360p"]
+
+# Títulos de playlist podem ser bem longos, e o Windows ainda impõe 260
+# caracteres de caminho. O que o nome da pasta não consumir sobra para o nome
+# do vídeo, que costuma ser igualmente comprido.
+_MAX_FOLDER_NAME = 120
 
 
 def download(
@@ -38,6 +47,16 @@ def download_playlist(
     urls = list(pl.video_urls)
     if not urls:
         raise RuntimeError("A playlist não contém vídeos disponíveis.")
+
+    try:
+        titulo = pl.title or ""
+    except Exception:
+        # O título é só o nome da pasta: sem ele os vídeos ainda baixam,
+        # apenas soltos no destino escolhido.
+        _log.exception("Não foi possível ler o título da playlist %s", url)
+        titulo = ""
+    destino = str(_playlist_folder(output_path, titulo))
+
     total = len(urls)
     downloaded: list[tuple[str, str]] = []
     failed: list[tuple[str, str]] = []
@@ -47,7 +66,7 @@ def download_playlist(
             yt = YouTube(video_url, on_progress_callback=on_progress)
             if on_video_start:
                 on_video_start(index, total, yt.title)
-            downloaded.append(_download_video(yt, audio_only, output_path, resolution))
+            downloaded.append(_download_video(yt, audio_only, destino, resolution))
         except Exception as exc:
             failed.append((video_url, str(exc)))
 
@@ -97,6 +116,31 @@ def _unique_path(path: Path) -> Path:
         if not candidate.exists():
             return candidate
         counter += 1
+
+
+def _playlist_folder(output_path: str, title: str) -> Path:
+    """Subpasta com o nome da playlist, dentro do destino escolhido.
+
+    Uma pasta já existente é reaproveitada de propósito: baixar a mesma
+    playlist de novo deve completar o que está lá, e não criar "musicas (1)"
+    ao lado. Os arquivos seguem protegidos um a um por `_unique_path`, então
+    reaproveitar a pasta não sobrescreve nada.
+
+    Sem título utilizável, ou se o nome já estiver ocupado por um arquivo,
+    devolve o próprio destino: perder o agrupamento é bem melhor do que
+    perder o download inteiro.
+    """
+    nome = _sanitize(title)[:_MAX_FOLDER_NAME].strip(". ")
+    if not nome:
+        return Path(output_path)
+
+    destino = Path(output_path) / nome
+    try:
+        destino.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        _log.exception("Não foi possível criar %s; salvando direto em %s", destino, output_path)
+        return Path(output_path)
+    return destino
 
 
 def _target_name(stream) -> str:
