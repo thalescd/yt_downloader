@@ -16,6 +16,21 @@ def app_dir() -> Path:
     return Path(__file__).resolve().parents[1]
 
 
+def download_dir(saved: str = "") -> Path:
+    """Pasta de destino: a última escolhida, se ainda existir.
+
+    A verificação não é zelo excessivo — entre uma sessão e outra a pasta pode
+    ter sumido junto com o pendrive, sido renomeada ou ficado em outro perfil
+    do Windows. Cair para Downloads deixa o app abrir utilizável, em vez de
+    exibir um caminho que só falharia na hora de baixar.
+    """
+    if saved:
+        escolhida = Path(saved)
+        if escolhida.is_dir():
+            return escolhida
+    return Path.home() / "Downloads"
+
+
 def log_dir() -> Path:
     """Pasta de logs, ao lado do executável.
 

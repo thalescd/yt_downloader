@@ -20,6 +20,29 @@ def test_logs_ficam_ao_lado_do_executavel() -> None:
     assert paths.log_dir().parent == paths.app_dir()
 
 
+def test_pasta_salva_e_reaproveitada(tmp_path: Path) -> None:
+    destino = tmp_path / "Videos"
+    destino.mkdir()
+    assert paths.download_dir(str(destino)) == destino
+
+
+def test_sem_pasta_salva_cai_para_downloads() -> None:
+    assert paths.download_dir("") == Path.home() / "Downloads"
+
+
+def test_pasta_que_sumiu_cai_para_downloads(tmp_path: Path) -> None:
+    """O caminho salvo pode ter ido embora com o pendrive, ou sido renomeado.
+    Melhor abrir em Downloads do que exibir um destino que falharia só na hora
+    de baixar."""
+    assert paths.download_dir(str(tmp_path / "nao-existe")) == Path.home() / "Downloads"
+
+
+def test_caminho_que_virou_arquivo_cai_para_downloads(tmp_path: Path) -> None:
+    arquivo = tmp_path / "destino"
+    arquivo.touch()
+    assert paths.download_dir(str(arquivo)) == Path.home() / "Downloads"
+
+
 def test_app_dir_acompanha_o_executavel_quando_congelado(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

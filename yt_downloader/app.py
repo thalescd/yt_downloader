@@ -9,7 +9,7 @@ from typing import Optional
 
 import sv_ttk
 
-from yt_downloader import config, history, log, opener, urls
+from yt_downloader import config, history, log, opener, paths, urls
 from yt_downloader.downloader import download, download_playlist, has_ffmpeg
 from yt_downloader.version import APP_NAME, __version__
 
@@ -89,7 +89,7 @@ class App(tk.Tk):
             self._ffmpeg_label = None
 
         ttk.Label(frame, text="Pasta de destino:").grid(row=7, column=0, sticky="w")
-        self._path_var = tk.StringVar(value=str(Path.home() / "Downloads"))
+        self._path_var = tk.StringVar(value=str(paths.download_dir(self._config.download_path)))
         ttk.Entry(frame, textvariable=self._path_var, width=42, state="readonly").grid(
             row=8, column=0, pady=(2, 12), sticky="w"
         )
@@ -114,22 +114,33 @@ class App(tk.Tk):
     def _open_history(self) -> None:
         HistoryWindow(self)
 
+    def _save_config(self, preferencia: str) -> None:
+        """Persiste a configuração, avisando sem derrubar o app.
+
+        Gravar pode falhar por pasta somente-leitura — o app é portátil e pode
+        estar rodando de um pendrive ou de uma pasta protegida. Nesse caso a
+        escolha ainda vale para esta sessão; só não sobrevive à próxima.
+        """
+        try:
+            config.save(self._config)
+        except Exception as exc:
+            _log.exception("Falha ao salvar a preferência de %s", preferencia)
+            messagebox.showwarning(
+                "Aviso", f"Não foi possível salvar a preferência de {preferencia}:\n{exc}"
+            )
+
     def _on_toggle_theme(self) -> None:
         theme = "dark" if self._dark_var.get() else "light"
         sv_ttk.set_theme(theme)
         self._config.theme = theme
-        try:
-            config.save(self._config)
-        except Exception as exc:
-            _log.exception("Falha ao salvar a preferência de tema")
-            messagebox.showwarning(
-                "Aviso", f"Não foi possível salvar a preferência de tema:\n{exc}"
-            )
+        self._save_config("tema")
 
     def _select_folder(self):
         path = filedialog.askdirectory(initialdir=self._path_var.get())
         if path:
             self._path_var.set(path)
+            self._config.download_path = path
+            self._save_config("pasta de destino")
 
     def _update_quality_state(self) -> None:
         is_audio = self._type_var.get() == "audio"
