@@ -1,2 +1,2 @@
-pytubefix==10.3.4
+pytubefix==11.1.0
 sv_ttk==2.6.1
