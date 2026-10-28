@@ -43,6 +43,17 @@ Se o `python` do PATH for anterior ao 3.12, o setup procura um interpretador ade
 
 **Linux** — `./scripts/build.sh` gera um binário Linux em `dist/yt-downloader`. O PyInstaller não faz compilação cruzada: o `.exe` do Windows precisa ser gerado no Windows.
 
+## Publicar uma release
+
+Atualize `__version__` em `yt_downloader/version.py`, faça o commit na `main` e envie uma tag com o mesmo número:
+
+```bash
+git tag v1.1.0
+git push origin v1.1.0
+```
+
+O workflow `release.yml` gera o `.exe` no Windows e o binário no Linux e publica os dois numa release do GitHub, com notas geradas a partir dos commits. Se a tag não bater com `__version__`, ele falha antes de compilar.
+
 ## Desenvolvimento
 
 Instale as dependências de desenvolvimento e rode todas as verificações:

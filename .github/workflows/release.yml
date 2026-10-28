@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write  # gh release create
+
+jobs:
+  build:
+    # O PyInstaller não faz compilação cruzada: cada binário sai do seu sistema.
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      # A tag vira o nome da release e o __version__ aparece no título da
+      # janela; se divergirem, o usuário baixa a 1.1.0 e vê 1.0.0.
+      - name: Conferir tag contra __version__
+        run: |
+          versao=$(python -c "from yt_downloader.version import __version__; print(__version__)")
+          if [ "v$versao" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME não corresponde a __version__ = $versao"
+            exit 1
+          fi
+
+      # O build exige o .venv que o setup criaria, mas o setup termina abrindo
+      # o app, o que não serve aqui.
+      - name: Criar ambiente virtual
+        run: |
+          python -m venv .venv
+          if [ "$RUNNER_OS" = Windows ]; then py=.venv/Scripts/python; else py=.venv/bin/python; fi
+          "$py" -m pip install -r requirements.txt
+
+      - name: Gerar executável
+        run: python scripts/tasks.py build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}
+          path: dist/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publicar release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --generate-notes
