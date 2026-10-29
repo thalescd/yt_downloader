@@ -39,9 +39,11 @@ Se o `python` do PATH for anterior ao 3.12, o setup procura um interpretador ade
 
 ## Gerar executável
 
-**Windows** — com o setup já feito, dê duplo clique em `scripts\build.bat`. O `.exe` será gerado em `dist\YT Downloader.exe`.
+**Windows** — com o setup já feito, dê duplo clique em `scripts\build.bat`. O app será gerado na pasta `dist\YT Downloader\`, com o `.exe` dentro.
 
-**Linux** — `./scripts/build.sh` gera um binário Linux em `dist/yt-downloader`. O PyInstaller não faz compilação cruzada: o `.exe` do Windows precisa ser gerado no Windows.
+**Linux** — `./scripts/build.sh` gera um binário Linux em `dist/yt-downloader/`. O PyInstaller não faz compilação cruzada: o `.exe` do Windows precisa ser gerado no Windows.
+
+O build é uma pasta, não um `.exe` único, e isso é de propósito: o modo de arquivo único se extrai no `%TEMP%` a cada execução, o que antivírus com análise comportamental (como o Bitdefender) bloqueiam como suspeito. Distribua a pasta inteira — o executável não roda sem a `_internal` ao lado.
 
 ## Publicar uma release
 
@@ -52,7 +54,7 @@ git tag v1.1.0
 git push origin v1.1.0
 ```
 
-O workflow `release.yml` gera o `.exe` no Windows e o binário no Linux e publica os dois numa release do GitHub, com notas geradas a partir dos commits. Se a tag não bater com `__version__`, ele falha antes de compilar.
+O workflow `release.yml` gera o app no Windows e no Linux e publica cada um, zipado, numa release do GitHub, com notas geradas a partir dos commits. Se a tag não bater com `__version__`, ele falha antes de compilar.
 
 ## Desenvolvimento
 

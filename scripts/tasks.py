@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import runpy
 import shutil
 import subprocess
 import sys
@@ -235,6 +236,42 @@ def lint() -> int:
 # --------------------------------------------------------------------------
 # build
 # --------------------------------------------------------------------------
+def _versao() -> str:
+    """Lida do arquivo, sem importar o pacote: o setup do sys.path para isso
+    seria mais código do que ler um módulo de duas constantes."""
+    return runpy.run_path(str(RAIZ / "yt_downloader" / "version.py"))["__version__"]
+
+
+def _version_info(versao: str, nome: str) -> str:
+    """Recurso de versão do .exe, no formato que o --version-file lê.
+
+    Executável sem empresa, descrição e versão é uma das coisas que a
+    heurística dos antivírus pesa contra; é também o que o Windows mostra em
+    Propriedades > Detalhes.
+    """
+    numeros = tuple(int(parte) for parte in versao.split("."))
+    numeros = (numeros + (0, 0, 0, 0))[:4]
+    campos = {
+        "CompanyName": "Thales Castro",
+        "FileDescription": nome,
+        "FileVersion": versao,
+        "InternalName": nome,
+        "LegalCopyright": "Copyright (c) 2026 Thales Castro - Licença MIT",
+        "OriginalFilename": f"{nome}.exe",
+        "ProductName": nome,
+        "ProductVersion": versao,
+    }
+    strings = ", ".join(f"StringStruct({k!r}, {v!r})" for k, v in campos.items())
+    # 0x0416 = português do Brasil; 1200 = Unicode.
+    return (
+        "VSVersionInfo(\n"
+        f"  ffi=FixedFileInfo(filevers={numeros}, prodvers={numeros}, mask=0x3F, flags=0x0,\n"
+        "                    OS=0x40004, fileType=0x1, subtype=0x0, date=(0, 0)),\n"
+        f"  kids=[StringFileInfo([StringTable('041604B0', [{strings}])]),\n"
+        "        VarFileInfo([VarStruct('Translation', [0x0416, 1200])])])\n"
+    )
+
+
 def build() -> int:
     windows = os.name == "nt"
     _titulo("Build")
@@ -260,18 +297,32 @@ def build() -> int:
         return 1
 
     nome = "YT Downloader" if windows else "yt-downloader"
-    # --icon é ignorado fora de Windows e macOS, então nem é passado lá.
-    icone = ["--icon", Path("assets") / "icon.ico"] if windows else []
+    # --icon e --version-file são ignorados fora do Windows (e do macOS, no
+    # caso do ícone), então nem são passados lá.
+    so_windows: list[object] = []
+    if windows:
+        version_file = RAIZ / "build" / "version_info.txt"
+        version_file.parent.mkdir(exist_ok=True)
+        version_file.write_text(_version_info(_versao(), nome), encoding="utf-8")
+        so_windows = ["--icon", Path("assets") / "icon.ico", "--version-file", version_file]
 
     print("Gerando executável...")
     gerado = _roda(
         [
             _venv_bin("pyinstaller"),
-            "--onefile",
+            # --onedir, e não --onefile: o onefile se extrai no %TEMP% e carrega
+            # as DLLs de lá a cada execução, o mesmo padrão de um dropper, e é
+            # isso que o comportamental dos antivírus (ex.: Bitdefender ATC)
+            # bloqueia. --noupx porque executável compactado é outro alerta
+            # clássico, e o PyInstaller usa o UPX sozinho se o achar no PATH.
+            "--onedir",
+            "--noupx",
+            # Sem ele, o onedir pergunta antes de apagar o dist/ anterior.
+            "--noconfirm",
             "--windowed",
             "--name",
             nome,
-            *icone,
+            *so_windows,
             "--collect-all",
             "pytubefix",
             "--collect-all",
@@ -285,7 +336,9 @@ def build() -> int:
         _erro("falha ao gerar o executável.")
         return 1
 
-    print(f"\nPronto! Executável gerado em: {Path('dist') / (nome + ('.exe' if windows else ''))}")
+    executavel = Path("dist") / nome / (nome + (".exe" if windows else ""))
+    print(f"\nPronto! Executável gerado em: {executavel}")
+    print(f"Distribua a pasta {Path('dist') / nome} inteira, não só o executável.")
     return 0
 
 

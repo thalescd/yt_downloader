@@ -46,8 +46,8 @@ def test_caminho_que_virou_arquivo_cai_para_downloads(tmp_path: Path) -> None:
 def test_app_dir_acompanha_o_executavel_quando_congelado(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Com --onefile, sys.executable é o .exe em si, não a pasta temporária
-    de extração — é o que faz o modo portátil funcionar."""
+    """Congelado, sys.executable é o .exe em si — é o que faz o modo
+    portátil funcionar."""
     monkeypatch.setattr(paths.sys, "frozen", True, raising=False)
     monkeypatch.setattr(paths.sys, "executable", str(tmp_path / "dist" / "YT Downloader.exe"))
     assert paths.app_dir() == tmp_path / "dist"

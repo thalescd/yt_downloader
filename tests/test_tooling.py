@@ -82,3 +82,16 @@ def test_casca_nao_chama_ferramenta_direto(casca: str, ferramenta: str) -> None:
     lugares, que divergem em silêncio."""
     texto = (RAIZ / casca).read_text(encoding="utf-8")
     assert ferramenta not in texto, f"{casca} voltou a chamar {ferramenta} direto"
+
+
+def test_version_info_do_exe_acompanha_a_versao() -> None:
+    """O recurso de versão sai de __version__; se o formato quebrar, o
+    PyInstaller só reclama no build do Windows, e não aqui."""
+    from scripts import tasks
+    from yt_downloader.version import __version__
+
+    texto = tasks._version_info(__version__, "YT Downloader")
+    numeros = tuple(int(parte) for parte in __version__.split("."))
+    assert f"filevers={(numeros + (0, 0, 0, 0))[:4]}" in texto
+    assert f"StringStruct('ProductVersion', '{__version__}')" in texto
+    compile(texto, "version_info.txt", "eval")

@@ -13,6 +13,9 @@ pythonVersion = "3.12"
 pythonPlatform = "Linux"
 typeCheckingMode = "basic"
 reportMissingTypeStubs = false
+# O build --onedir deixa em dist/ cópias das dependências, que não são nosso
+# código. Definir exclude substitui o padrão, daí repetir os dois primeiros.
+exclude = ["**/.*", "**/__pycache__", "build", "dist"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

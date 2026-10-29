@@ -45,10 +45,16 @@ jobs:
       - name: Gerar executável
         run: python scripts/tasks.py build
 
+      # O build é --onedir (ver tasks.py): o executável depende da pasta
+      # _internal ao lado, então o que se publica é a pasta zipada. zipfile da
+      # biblioteca padrão porque o runner Windows não tem `zip`.
+      - name: Compactar
+        run: python -m zipfile -c "yt-downloader-$GITHUB_REF_NAME-$RUNNER_OS.zip" dist/*
+
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}
-          path: dist/*
+          path: "*.zip"
 
   release:
     needs: build
