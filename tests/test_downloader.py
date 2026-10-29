@@ -222,6 +222,26 @@ def test_has_ffmpeg_falso_sem_nenhum(monkeypatch: pytest.MonkeyPatch) -> None:
     assert not downloader.has_ffmpeg()
 
 
+def test_progresso_soma_video_e_audio() -> None:
+    class Stream:
+        def __init__(self, filesize: int) -> None:
+            self.filesize = filesize
+
+    class Yt:
+        def register_on_progress_callback(self, func) -> None:
+            self.hook = func
+
+    vid, aud, yt = Stream(300), Stream(100), Yt()
+    pcts: list[float] = []
+    downloader._track_progress(cast(Any, yt), pcts.append, vid, aud)
+
+    yt.hook(vid, b"", 150)
+    yt.hook(vid, b"", 0)
+    yt.hook(aud, b"", 50)
+    yt.hook(aud, b"", 0)
+    assert pcts == [37.5, 75.0, 87.5, 100.0]
+
+
 def test_merge_streams_monta_o_comando_certo(monkeypatch: pytest.MonkeyPatch) -> None:
     capturado: dict = {}
 
@@ -347,7 +367,7 @@ def _playlist_com(monkeypatch: pytest.MonkeyPatch, pl: FakePlaylist) -> list[str
     monkeypatch.setattr(
         downloader,
         "_download_video",
-        lambda yt, audio, out, res: (destinos.append(out), (f"{out}/x.mp4", "720p"))[1],
+        lambda yt, audio, out, res, *_: (destinos.append(out), (f"{out}/x.mp4", "720p"))[1],
     )
     return destinos
 

@@ -26,23 +26,25 @@ def download(
     url: str,
     audio_only: bool,
     output_path: str,
-    on_progress=None,
+    on_progress: Optional[Callable[[float], None]] = None,
     resolution: str = "best",
+    on_processing: Optional[Callable[[], None]] = None,
 ) -> tuple[str, str]:
     try:
-        yt = YouTube(url, on_progress_callback=on_progress)
+        yt = YouTube(url)
     except RegexMatchError:
         raise ValueError("URL inválida. Verifique o link e tente novamente.")
-    return _download_video(yt, audio_only, output_path, resolution)
+    return _download_video(yt, audio_only, output_path, resolution, on_progress, on_processing)
 
 
 def download_playlist(
     url: str,
     audio_only: bool,
     output_path: str,
-    on_progress=None,
+    on_progress: Optional[Callable[[float], None]] = None,
     on_video_start: Optional[Callable[[int, int, str], None]] = None,
     resolution: str = "best",
+    on_processing: Optional[Callable[[], None]] = None,
 ) -> tuple[list[tuple[str, str, str]], list[tuple[str, str]]]:
     """Baixa a playlist inteira, sem deixar que uma falha derrube o resto.
 
@@ -71,10 +73,12 @@ def download_playlist(
 
     for index, video_url in enumerate(urls, start=1):
         try:
-            yt = YouTube(video_url, on_progress_callback=on_progress)
+            yt = YouTube(video_url)
             if on_video_start:
                 on_video_start(index, total, yt.title)
-            caminho, qualidade = _download_video(yt, audio_only, destino, resolution)
+            caminho, qualidade = _download_video(
+                yt, audio_only, destino, resolution, on_progress, on_processing
+            )
             downloaded.append((video_url, caminho, qualidade))
         except Exception as exc:
             failed.append((video_url, str(exc)))
@@ -197,6 +201,29 @@ def _download_temp(stream, output_path: str, prefix: str) -> str:
     return result
 
 
+def _track_progress(yt: YouTube, on_progress: Optional[Callable[[float], None]], *streams) -> None:
+    """Reporta o progresso dos streams somados, como uma só porcentagem.
+
+    Vídeo e áudio adaptativos baixam um depois do outro; somar os dois evita
+    que a barra chegue a 100% e recomece do zero no meio do mesmo vídeo.
+    """
+    if not on_progress:
+        return
+    total = sum(s.filesize for s in streams)
+    if not total:
+        return
+
+    def hook(stream, _chunk, bytes_remaining: int) -> None:
+        antes = 0
+        for s in streams:
+            if s is stream:
+                break
+            antes += s.filesize
+        on_progress((antes + stream.filesize - bytes_remaining) / total * 100)
+
+    yt.register_on_progress_callback(hook)
+
+
 def _merge_streams(video_path: str, audio_path: str, output_path: str) -> None:
     subprocess.run(
         [
@@ -237,12 +264,18 @@ def _safe_download(stream, output_path: str) -> str:
 
 
 def _download_video(
-    yt: YouTube, audio_only: bool, output_path: str, resolution: str = "best"
+    yt: YouTube,
+    audio_only: bool,
+    output_path: str,
+    resolution: str = "best",
+    on_progress: Optional[Callable[[float], None]] = None,
+    on_processing: Optional[Callable[[], None]] = None,
 ) -> tuple[str, str]:
     if audio_only:
         stream = yt.streams.filter(only_audio=True).first()
         if not stream:
             raise RuntimeError("Nenhum stream de áudio disponível para este vídeo.")
+        _track_progress(yt, on_progress, stream)
         return _safe_download(stream, output_path), "áudio"
 
     if has_ffmpeg():
@@ -250,11 +283,14 @@ def _download_video(
         aud = yt.streams.filter(only_audio=True).order_by("abr").last()
         if vid and aud:
             actual_res = vid.resolution or "desconhecida"
+            _track_progress(yt, on_progress, vid, aud)
             tmp_vid = _download_temp(vid, output_path, "_tmpv_")
             try:
                 tmp_aud = _download_temp(aud, output_path, "_tmpa_")
                 try:
                     out = _unique_path(Path(output_path) / f"{_sanitize(yt.title)}.mp4")
+                    if on_processing:
+                        on_processing()
                     _merge_streams(tmp_vid, tmp_aud, str(out))
                     return str(out), actual_res
                 finally:
@@ -267,4 +303,5 @@ def _download_video(
     if not stream:
         hint = "" if has_ffmpeg() else " Este vídeo exige o ffmpeg (winget install ffmpeg)."
         raise RuntimeError(f"Nenhum stream de vídeo disponível para este vídeo.{hint}")
+    _track_progress(yt, on_progress, stream)
     return _safe_download(stream, output_path), stream.resolution or "desconhecida"

@@ -214,6 +214,7 @@ class App(tk.Tk):
                     on_progress=self._on_progress,
                     on_video_start=self._on_video_start,
                     resolution=resolution,
+                    on_processing=self._on_processing,
                 )
                 self._queue.put(("done_playlist", (downloaded, failed)))
             else:
@@ -223,17 +224,18 @@ class App(tk.Tk):
                     output_path,
                     on_progress=self._on_progress,
                     resolution=resolution,
+                    on_processing=self._on_processing,
                 )
                 self._queue.put(("done", result))
         except Exception as exc:
             _log.exception("Download falhou para %s", url)
             self._queue.put(("error", str(exc)))
 
-    def _on_progress(self, stream, chunk, bytes_remaining: int):
-        if not stream.filesize:
-            return
-        pct = (stream.filesize - bytes_remaining) / stream.filesize * 100
+    def _on_progress(self, pct: float) -> None:
         self._queue.put(("progress", pct))
+
+    def _on_processing(self) -> None:
+        self._queue.put(("processing", None))
 
     def _poll_queue(self):
         try:
@@ -242,6 +244,9 @@ class App(tk.Tk):
                 if kind == "progress":
                     self._progress_var.set(value)
                     self._status_var.set(f"Baixando... {value:.0f}%")
+                elif kind == "processing":
+                    self._progress_var.set(100)
+                    self._status_var.set("Processando...")
                 elif kind == "playlist_loading":
                     self._status_var.set("Carregando playlist...")
                 elif kind == "video_start":
