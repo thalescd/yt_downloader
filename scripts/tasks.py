@@ -327,6 +327,9 @@ def build() -> int:
             "pytubefix",
             "--collect-all",
             "sv_ttk",
+            # Leva junto o binário do ffmpeg, que fica em imageio_ffmpeg/binaries.
+            "--collect-all",
+            "imageio_ffmpeg",
             "--paths",
             ".",
             Path("yt_downloader") / "__main__.py",

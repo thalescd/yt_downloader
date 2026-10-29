@@ -18,7 +18,7 @@ Baixa vídeos ou áudio do YouTube com interface gráfica.
 - Python 3.12+ (para rodar via terminal ou gerar o executável)
 - O `.exe` gerado não exige Python instalado na máquina de destino
 - No Linux, o `tkinter` costuma vir em pacote separado: `python3-tk` (Debian/Ubuntu), `python3-tkinter` (Fedora), `tk` (Arch)
-- **ffmpeg** (opcional) — necessário para download em 720p, 1080p e "Melhor disponível" em alta qualidade. Instale com `winget install ffmpeg`.
+- **ffmpeg** — já vem embutido (pacote `imageio-ffmpeg`); se houver um ffmpeg no PATH, ele tem preferência.
 
 ## Setup e execução
 

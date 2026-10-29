@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 from typing import Callable, Optional
 
+import imageio_ffmpeg
 from pytubefix import Playlist, YouTube
 from pytubefix.exceptions import RegexMatchError
 
@@ -81,8 +82,20 @@ def download_playlist(
     return downloaded, failed
 
 
+def _ffmpeg_exe() -> Optional[str]:
+    """O ffmpeg do PATH, ou o que vem embutido no pacote imageio-ffmpeg.
+
+    O embutido dispensa o usuário de instalar o ffmpeg, que hoje é obrigatório
+    na prática: o YouTube vem deixando de oferecer streams progressivos.
+    """
+    try:
+        return shutil.which("ffmpeg") or imageio_ffmpeg.get_ffmpeg_exe()
+    except RuntimeError:
+        return None
+
+
 def has_ffmpeg() -> bool:
-    return shutil.which("ffmpeg") is not None
+    return _ffmpeg_exe() is not None
 
 
 def _get_progressive_stream(yt: YouTube, resolution: str):
@@ -186,7 +199,17 @@ def _download_temp(stream, output_path: str, prefix: str) -> str:
 
 def _merge_streams(video_path: str, audio_path: str, output_path: str) -> None:
     subprocess.run(
-        ["ffmpeg", "-y", "-i", video_path, "-i", audio_path, "-c", "copy", output_path],
+        [
+            _ffmpeg_exe() or "ffmpeg",
+            "-y",
+            "-i",
+            video_path,
+            "-i",
+            audio_path,
+            "-c",
+            "copy",
+            output_path,
+        ],
         check=True,
         capture_output=True,
     )
@@ -242,6 +265,6 @@ def _download_video(
     # Fallback: progressive only
     stream = _get_progressive_stream(yt, resolution)
     if not stream:
-        hint = "" if has_ffmpeg() else " Instale o ffmpeg para mais opções de qualidade."
+        hint = "" if has_ffmpeg() else " Este vídeo exige o ffmpeg (winget install ffmpeg)."
         raise RuntimeError(f"Nenhum stream de vídeo disponível para este vídeo.{hint}")
     return _safe_download(stream, output_path), stream.resolution or "desconhecida"

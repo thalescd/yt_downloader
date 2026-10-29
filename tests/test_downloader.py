@@ -202,10 +202,23 @@ def test_adaptive_ignora_streams_de_audio() -> None:
 # --------------------------------------------------------------------------
 # ffmpeg
 # --------------------------------------------------------------------------
-def test_has_ffmpeg_reflete_o_path(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_ffmpeg_prefere_o_do_path(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(downloader.shutil, "which", lambda _: "/usr/bin/ffmpeg")
-    assert downloader.has_ffmpeg()
+    assert downloader._ffmpeg_exe() == "/usr/bin/ffmpeg"
+
+
+def test_ffmpeg_cai_no_embutido_sem_o_path(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(downloader.shutil, "which", lambda _: None)
+    monkeypatch.setattr(downloader.imageio_ffmpeg, "get_ffmpeg_exe", lambda: "/emb/ffmpeg")
+    assert downloader._ffmpeg_exe() == "/emb/ffmpeg"
+
+
+def test_has_ffmpeg_falso_sem_nenhum(monkeypatch: pytest.MonkeyPatch) -> None:
+    def ausente():
+        raise RuntimeError("sem binário")
+
+    monkeypatch.setattr(downloader.shutil, "which", lambda _: None)
+    monkeypatch.setattr(downloader.imageio_ffmpeg, "get_ffmpeg_exe", ausente)
     assert not downloader.has_ffmpeg()
 
 
@@ -217,6 +230,7 @@ def test_merge_streams_monta_o_comando_certo(monkeypatch: pytest.MonkeyPatch) ->
         capturado["kwargs"] = kwargs
 
     monkeypatch.setattr(downloader.subprocess, "run", fake_run)
+    monkeypatch.setattr(downloader, "_ffmpeg_exe", lambda: "ffmpeg")
     downloader._merge_streams("v.mp4", "a.webm", "saida.mp4")
 
     assert capturado["cmd"] == [
